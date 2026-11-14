@@ -1,0 +1,266 @@
+import type { QuizAnswer } from "./types";
+
+/** Prioriza menor exposição; em empate, a questão há mais tempo sem resposta. */
+export function selectPracticeQuestions(
+  pool: Question[],
+  answers: Pick<QuizAnswer, "question_id" | "answered_at">[],
+  limit = 10,
+): Question[] {
+  const history = new Map<string, { count: number; last: string }>();
+  for (const answer of answers) {
+    const previous = history.get(answer.question_id) ?? { count: 0, last: "" };
+    history.set(answer.question_id, {
+      count: previous.count + 1,
+      last: previous.last > answer.answered_at ? previous.last : answer.answered_at,
+    });
+  }
+  if (!Number.isFinite(limit)) return [];
+  return [...new Map(pool.map((q) => [q.id, q])).values()]
+    .sort((a, b) => {
+      const left = history.get(a.id) ?? { count: 0, last: "" };
+      const right = history.get(b.id) ?? { count: 0, last: "" };
+      return (
+        left.count - right.count || left.last.localeCompare(right.last) || a.id.localeCompare(b.id)
+      );
+    })
+    .slice(0, Math.max(0, Math.floor(limit)));
+}
+
+export interface Question {
+  id: string;
+  topic: string;
+  q: string;
+  opts: string[];
+  correct: number;
+  why: string;
+}
+
+/** Banco fixo e auditável de questões (não gerado por IA). As 3 originais foram mantidas (web-1, bd-1, log-1). */
+export const QUESTIONS: Question[] = [
+  {
+    id: "web-1",
+    topic: "Desenvolvimento Web",
+    q: "Qual elemento HTML representa o conteúdo principal de uma página?",
+    opts: ["<header>", "<main>", "<footer>", "<aside>"],
+    correct: 1,
+    why: "O elemento main representa o conteúdo principal e exclusivo do documento.",
+  },
+  {
+    id: "web-2",
+    topic: "Desenvolvimento Web",
+    q: "Qual propriedade CSS cria um layout flexível em uma dimensão?",
+    opts: ["display: grid", "display: flex", "position: absolute", "float: left"],
+    correct: 1,
+    why: "Flexbox (display: flex) organiza itens em uma linha ou coluna; Grid trabalha em duas dimensões.",
+  },
+  {
+    id: "web-3",
+    topic: "Desenvolvimento Web",
+    q: "Qual código de status HTTP indica 'não encontrado'?",
+    opts: ["200", "301", "404", "500"],
+    correct: 2,
+    why: "404 Not Found indica que o servidor não encontrou o recurso solicitado.",
+  },
+  {
+    id: "web-4",
+    topic: "Desenvolvimento Web",
+    q: "Qual atributo torna uma imagem acessível para leitores de tela?",
+    opts: ["title", "src", "alt", "loading"],
+    correct: 2,
+    why: "O atributo alt descreve a imagem para tecnologias assistivas e aparece se ela não carregar.",
+  },
+  {
+    id: "web-5",
+    topic: "Desenvolvimento Web",
+    q: "Em JavaScript, qual palavra declara uma variável que não pode ser reatribuída?",
+    opts: ["var", "let", "const", "static"],
+    correct: 2,
+    why: "const impede reatribuição da referência (o conteúdo de objetos ainda pode mudar).",
+  },
+  {
+    id: "web-6",
+    topic: "Desenvolvimento Web",
+    q: "Qual método HTTP é normalmente usado para criar um recurso?",
+    opts: ["GET", "POST", "HEAD", "OPTIONS"],
+    correct: 1,
+    why: "POST envia dados para criar recursos; GET apenas lê.",
+  },
+  {
+    id: "bd-1",
+    topic: "Banco de Dados",
+    q: "Qual é a função de uma chave primária?",
+    opts: [
+      "Ordenar os registros",
+      "Permitir valores duplicados",
+      "Identificar unicamente cada registro",
+      "Armazenar apenas textos",
+    ],
+    correct: 2,
+    why: "A chave primária identifica cada registro e não permite valores nulos ou duplicados.",
+  },
+  {
+    id: "bd-2",
+    topic: "Banco de Dados",
+    q: "Qual comando SQL remove linhas de uma tabela?",
+    opts: ["DROP", "DELETE", "REMOVE", "TRUNCATE COLUMN"],
+    correct: 1,
+    why: "DELETE remove linhas (com WHERE opcional); DROP remove a tabela inteira.",
+  },
+  {
+    id: "bd-3",
+    topic: "Banco de Dados",
+    q: "Uma chave estrangeira serve para…",
+    opts: [
+      "Criptografar dados",
+      "Referenciar a chave de outra tabela",
+      "Acelerar todas as consultas",
+      "Evitar backups",
+    ],
+    correct: 1,
+    why: "A chave estrangeira cria um vínculo referencial entre tabelas.",
+  },
+  {
+    id: "bd-4",
+    topic: "Banco de Dados",
+    q: "Qual cláusula agrupa linhas para funções de agregação?",
+    opts: ["ORDER BY", "GROUP BY", "HAVING", "LIMIT"],
+    correct: 1,
+    why: "GROUP BY agrupa; HAVING filtra grupos depois de agregados.",
+  },
+  {
+    id: "bd-5",
+    topic: "Banco de Dados",
+    q: "Qual forma normal elimina grupos repetitivos e exige valores atômicos?",
+    opts: ["1FN", "2FN", "3FN", "FNBC"],
+    correct: 0,
+    why: "A primeira forma normal exige atributos atômicos, sem listas repetidas em uma coluna.",
+  },
+  {
+    id: "log-1",
+    topic: "Lógica de Programação",
+    q: "Qual estrutura repete um bloco de código?",
+    opts: ["Variável", "Comentário", "Laço de repetição", "Constante"],
+    correct: 2,
+    why: "Laços como for e while executam repetidamente um bloco, conforme uma condição.",
+  },
+  {
+    id: "log-2",
+    topic: "Lógica de Programação",
+    q: "Qual o resultado de 7 % 3 (resto da divisão)?",
+    opts: ["0", "1", "2", "2,33"],
+    correct: 1,
+    why: "7 = 3 × 2 + 1, portanto o resto é 1.",
+  },
+  {
+    id: "log-3",
+    topic: "Lógica de Programação",
+    q: "A expressão (verdadeiro E falso) OU verdadeiro resulta em…",
+    opts: ["verdadeiro", "falso", "indefinido", "erro"],
+    correct: 0,
+    why: "verdadeiro E falso = falso; falso OU verdadeiro = verdadeiro.",
+  },
+  {
+    id: "log-4",
+    topic: "Lógica de Programação",
+    q: "Qual estrutura escolhe entre caminhos conforme uma condição?",
+    opts: ["se/senão", "enquanto", "para", "vetor"],
+    correct: 0,
+    why: "Estruturas condicionais (if/else) decidem qual bloco executar.",
+  },
+  {
+    id: "log-5",
+    topic: "Lógica de Programação",
+    q: "Em um vetor de 10 posições indexado a partir de 0, qual é o último índice?",
+    opts: ["10", "9", "11", "1"],
+    correct: 1,
+    why: "Índices vão de 0 a n − 1; com 10 posições, o último é 9.",
+  },
+  {
+    id: "log-6",
+    topic: "Lógica de Programação",
+    q: "A busca binária exige que a lista esteja…",
+    opts: ["Vazia", "Ordenada", "Com números pares", "Sem repetição"],
+    correct: 1,
+    why: "A busca binária descarta metade da lista a cada passo, o que só funciona com dados ordenados.",
+  },
+  {
+    id: "red-1",
+    topic: "Redes de Computadores",
+    q: "Qual protocolo traduz nomes de domínio em endereços IP?",
+    opts: ["HTTP", "DNS", "FTP", "SMTP"],
+    correct: 1,
+    why: "O DNS resolve nomes como exemplo.com para endereços IP.",
+  },
+  {
+    id: "red-2",
+    topic: "Redes de Computadores",
+    q: "Quantos bits possui um endereço IPv4?",
+    opts: ["16", "32", "64", "128"],
+    correct: 1,
+    why: "IPv4 usa 32 bits (4 octetos); IPv6 usa 128 bits.",
+  },
+  {
+    id: "red-3",
+    topic: "Redes de Computadores",
+    q: "Qual protocolo de transporte garante entrega ordenada?",
+    opts: ["UDP", "TCP", "ICMP", "ARP"],
+    correct: 1,
+    why: "TCP é orientado a conexão, com confirmação e ordenação; UDP não garante.",
+  },
+  {
+    id: "red-4",
+    topic: "Redes de Computadores",
+    q: "Qual a porta padrão do HTTPS?",
+    opts: ["21", "80", "443", "8080"],
+    correct: 2,
+    why: "HTTPS usa a porta 443 por padrão; HTTP usa 80.",
+  },
+  {
+    id: "red-5",
+    topic: "Redes de Computadores",
+    q: "Qual camada do modelo OSI cuida do roteamento?",
+    opts: ["Física", "Enlace", "Rede", "Aplicação"],
+    correct: 2,
+    why: "A camada de rede (3) faz endereçamento lógico e roteamento.",
+  },
+  {
+    id: "est-1",
+    topic: "Técnicas de Estudo",
+    q: "A repetição espaçada funciona porque…",
+    opts: [
+      "Evita revisar",
+      "Revisa perto do momento de esquecer",
+      "Exige decorar tudo de uma vez",
+      "Substitui exercícios",
+    ],
+    correct: 1,
+    why: "Revisões em intervalos crescentes reforçam a memória quando ela começa a enfraquecer.",
+  },
+  {
+    id: "est-2",
+    topic: "Técnicas de Estudo",
+    q: "A técnica Pomodoro clássica alterna…",
+    opts: [
+      "50 min de foco e 1 min de pausa",
+      "25 min de foco e 5 min de pausa",
+      "2 h de foco e 2 h de pausa",
+      "Foco contínuo sem pausas",
+    ],
+    correct: 1,
+    why: "O ciclo clássico é 25 minutos de foco seguidos de 5 de pausa, com pausa longa a cada 4 ciclos.",
+  },
+  {
+    id: "est-3",
+    topic: "Técnicas de Estudo",
+    q: "Recuperação ativa (active recall) significa…",
+    opts: [
+      "Reler o texto várias vezes",
+      "Tentar lembrar a resposta antes de conferir",
+      "Grifar tudo",
+      "Ouvir música enquanto estuda",
+    ],
+    correct: 1,
+    why: "Forçar a memória a recuperar a informação fortalece mais do que reler passivamente.",
+  },
+];
+export const TOPICS = [...new Set(QUESTIONS.map((q) => q.topic))];

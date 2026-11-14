@@ -1,0 +1,18 @@
+{
+  "name": "StudyMind AI",
+  "short_name": "StudyMind",
+  "description": "Organize disciplinas, prazos, foco e revisões em um só lugar.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8faf9",
+  "theme_color": "#087f5b",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

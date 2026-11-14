@@ -1,3 +1,4 @@
+import { InteractionFeedback } from "@/components/feedback/InteractionFeedback";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -157,6 +158,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <InteractionFeedback />
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

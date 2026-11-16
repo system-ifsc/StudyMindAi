@@ -1,3 +1,4 @@
+import type { LearningTables } from "./learning-data";
 export type Priority = 1 | 2 | 3;
 
 export interface Profile {
@@ -61,6 +62,7 @@ export interface Material {
   kind: "txt" | "md" | "pdf";
   content: string;
   updated_at?: string;
+  subject_id?: string | null;
 }
 export interface QuizAnswer {
   id: string;
@@ -70,7 +72,7 @@ export interface QuizAnswer {
   answered_at: string;
 }
 
-export interface Tables {
+export interface Tables extends LearningTables {
   subjects: Subject;
   tasks: Task;
   study_sessions: StudySession;
@@ -88,4 +90,15 @@ export const TABLES: TableName[] = [
   "goals",
   "materials",
   "quiz_answers",
+  "study_conversations",
+  "study_messages",
+  "study_message_sources",
+  "study_message_feedback",
+  "generated_question_sets",
+  "generated_questions",
+  "generated_question_options",
+  "generated_question_sources",
+  "question_attempts",
+  "question_attempt_answers",
+  "material_files",
 ];

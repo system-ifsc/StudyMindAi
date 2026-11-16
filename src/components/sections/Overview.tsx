@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { addDays, formatBR, formatMinutes, today } from "@/lib/core/dates";
 import { completion, dueCards, minutesInRange, overdueTasks, streak } from "@/lib/core/metrics";
 import { buildPlan } from "@/lib/core/planner";
+import { learningRecommendations } from "@/lib/core/learning";
 import type { SectionProps } from "./registry";
 
 export function Overview({ go }: SectionProps) {
@@ -13,17 +14,17 @@ export function Overview({ go }: SectionProps) {
     tasks = useTable("tasks"),
     sessions = useTable("study_sessions"),
     cards = useTable("flashcards"),
-    subjects = useTable("subjects");
-  if (profile.isLoading || tasks.isLoading || sessions.isLoading) return <Loading rows={4} />;
-  const err = profile.error || tasks.error || sessions.error;
+    subjects = useTable("subjects"),
+    answers = useTable("quiz_answers");
+  const queries = [profile, tasks, sessions, cards, subjects, answers];
+  if (queries.some((q) => q.isLoading)) return <Loading rows={4} />;
+  const err = queries.find((q) => q.error)?.error;
   if (err)
     return (
       <ErrorState
         error={err}
         retry={() => {
-          profile.refetch();
-          tasks.refetch();
-          sessions.refetch();
+          queries.forEach((q) => void q.refetch());
         }}
       />
     );
@@ -59,6 +60,24 @@ export function Overview({ go }: SectionProps) {
         </h1>
         {p.objective && <p className="mt-2 text-muted-foreground">Objetivo: {p.objective}</p>}
       </div>
+      <Panel title="Sua central de aprendizagem">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Sugestões calculadas por regras determinísticas com base no seu histórico, prazos e
+          revisões.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {learningRecommendations(ts, cards.data ?? [], answers.data ?? [], ss, t).map((item) => (
+            <button
+              key={item.title}
+              onClick={() => go(item.section)}
+              className="rounded-xl border bg-surface p-4 text-left hover:bg-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <span className="block font-medium">{item.title}</span>
+              <span className="mt-1 block text-sm text-muted-foreground">{item.reason}</span>
+            </button>
+          ))}
+        </div>
+      </Panel>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
           label="Estudo nos últimos 7 dias"
@@ -111,6 +130,9 @@ export function Overview({ go }: SectionProps) {
             </Button>
           }
         >
+          <p className="mb-3 text-xs text-muted-foreground">
+            Planejamento calculado por algoritmo determinístico.
+          </p>
           {todayPlan.length === 0 ? (
             <Empty
               title="Nada planejado para hoje"

@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { parseBackup, type Backup } from "@/lib/core/backup";
+import { backupSchema, parseBackup, type Backup } from "@/lib/core/backup";
 import { formatMinutes } from "@/lib/core/dates";
 import type { Profile } from "@/lib/core/types";
 
@@ -33,6 +33,7 @@ export function Settings() {
   const [pending, setPending] = useState<Backup | null>(null),
     [importing, setImporting] = useState(false);
   const file = useRef<HTMLInputElement>(null);
+  const [exporting, setExporting] = useState(false);
   useEffect(() => {
     if (profile.data) setP(profile.data);
   }, [profile.data]);
@@ -49,6 +50,7 @@ export function Settings() {
   );
 
   async function exportJson() {
+    setExporting(true);
     try {
       const [prof, subjects, tasks, sessions, flashcards, goals, materials, quiz_answers] =
         await Promise.all([
@@ -110,9 +112,19 @@ export function Settings() {
           pick(x, ["id", "question_id", "topic", "correct", "answered_at"]),
         ),
       };
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(b, null, 2)], { type: "application/json" }),
-      );
+      const validated = backupSchema.safeParse(b);
+      if (!validated.success)
+        throw new Error(
+          "Não foi possível criar um backup recuperável: " + validated.error.issues[0]?.message,
+        );
+      const blob = new Blob([JSON.stringify(validated.data, null, 2)], {
+        type: "application/json",
+      });
+      if (blob.size > 20_000_000)
+        throw new Error(
+          "O backup ultrapassa o limite de recuperação de 20 MB. Solicite uma exportação administrativa.",
+        );
+      const url = URL.createObjectURL(blob);
       const a = Object.assign(document.createElement("a"), {
         href: url,
         download: `studymind-backup-${b.exported_at.slice(0, 10)}.json`,
@@ -122,6 +134,8 @@ export function Settings() {
       toast.success("Backup exportado");
     } catch (e) {
       toast.error((e as Error).message);
+    } finally {
+      setExporting(false);
     }
   }
   async function pickFile(f: File) {
@@ -129,13 +143,18 @@ export function Settings() {
       toast.error("Arquivo grande demais (máx. 20 MB).");
       return;
     }
-    const r = parseBackup(await f.text());
-    if (file.current) file.current.value = "";
-    if (!r.ok) {
-      toast.error(r.error);
-      return;
+    try {
+      const r = parseBackup(await f.text());
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      setPending(r.data);
+    } catch {
+      toast.error("Não foi possível ler o backup. Selecione o arquivo novamente.");
+    } finally {
+      if (file.current) file.current.value = "";
     }
-    setPending(r.data);
   }
   async function confirmImport() {
     if (!pending) return;
@@ -213,12 +232,13 @@ export function Settings() {
       </Panel>
       <Panel title="Backup (JSON)">
         <p className="mb-4 text-sm text-muted-foreground">
-          Exporte tudo para guardar uma cópia. Importar <strong>substitui</strong> todos os dados
-          atuais {repo.mode === "demo" ? "da demonstração" : "da sua conta"} depois de validar o
-          arquivo.
+          Exporte disciplinas, atividades, sessões, cartões, metas, textos de materiais e
+          resultados. Importar adiciona os registros à sua conta e atualiza o perfil em uma
+          transação. Os dados atuais são preservados. Reimportar o mesmo arquivo cria novas cópias.
+          Conversas, simulados completos e arquivos originais ainda não fazem parte deste backup v1.
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={exportJson}>
+          <Button variant="outline" onClick={exportJson} disabled={exporting || importing}>
             <Download className="size-4" aria-hidden />
             Exportar
           </Button>
@@ -239,13 +259,13 @@ export function Settings() {
       <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Substituir todos os dados?</AlertDialogTitle>
+            <AlertDialogTitle>Adicionar dados do backup?</AlertDialogTitle>
             <AlertDialogDescription>
               O arquivo é válido e contém {pending?.subjects.length} disciplinas,{" "}
               {pending?.tasks.length} atividades, {pending?.sessions.length} sessões,{" "}
               {pending?.flashcards.length} cartões, {pending?.goals.length} metas e{" "}
-              {pending?.materials.length} materiais. Os dados atuais serão apagados e substituídos.
-              Esta ação não pode ser desfeita.
+              {pending?.materials.length} materiais. Os registros serão adicionados com novos IDs;
+              seu perfil será atualizado. Guarde uma exportação atual antes de continuar.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -256,9 +276,8 @@ export function Settings() {
                 confirmImport();
               }}
               disabled={importing}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {importing && <Spin />}Substituir
+              {importing && <Spin />}Adicionar registros
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

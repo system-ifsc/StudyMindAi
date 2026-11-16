@@ -1,10 +1,36 @@
 import { z } from "zod";
 import { studyActionSchema, studyQuestionSchema } from "./study-tools";
 
+export const tutorModeSchema = z.enum(["teacher", "evaluator", "review"]);
+export const explanationLevelSchema = z.enum(["simple", "standard", "advanced"]);
+export type TutorMode = z.infer<typeof tutorModeSchema>;
+export type ExplanationLevel = z.infer<typeof explanationLevelSchema>;
+
+/** Instruções selecionadas de uma lista fechada; nenhum texto do cliente vira regra. */
+export function tutorInstructions(mode: TutorMode, level: ExplanationLevel): string {
+  const modes = {
+    teacher:
+      "Modo professor: explique conceitos passo a passo, use exemplos e termine com uma pergunta de compreensão.",
+    evaluator:
+      "Modo avaliador: solicite uma resposta do estudante antes de avaliar; explique critérios, acertos, erros e próximos passos. Não invente uma resposta do estudante.",
+    review:
+      "Modo revisão: use recuperação ativa, faça uma pergunta por vez e espere a resposta antes de revelar a explicação.",
+  };
+  const levels = {
+    simple:
+      "Nível introdutório: linguagem simples, explique termos técnicos e use analogias concretas.",
+    standard: "Nível intermediário: combine explicação conceitual e aplicação prática.",
+    advanced: "Nível avançado: aprofunde fundamentos, hipóteses, limitações e casos difíceis.",
+  };
+  return `${modes[mode]} ${levels[level]}`;
+}
+
 export const assistantRequestSchema = z.object({
   action: z.literal("chat").optional(),
   material_id: z.string().uuid().nullable().optional(),
   include_progress: z.boolean().optional(),
+  mode: tutorModeSchema.default("teacher"),
+  level: explanationLevelSchema.default("standard"),
   messages: z
     .array(
       z.object({

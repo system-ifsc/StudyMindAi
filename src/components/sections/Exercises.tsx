@@ -1,4 +1,5 @@
 import { StudyTools } from "./StudyTools";
+import { SavedQuizzes } from "./SavedQuizzes";
 import { useMemo, useState } from "react";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 import { useInsert, useTable } from "@/hooks/use-data";
@@ -168,6 +169,7 @@ export function Exercises() {
           </div>
         </Panel>
       )}
+      <SavedQuizzes />
       <StudyTools initialAction="quiz" allowed={["quiz", "exam"]} />
     </div>
   );

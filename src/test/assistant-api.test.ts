@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   stream: vi.fn(),
   client: vi.fn(),
   provider: vi.fn(),
+  reserve: vi.fn(),
 }));
 vi.mock("@supabase/supabase-js", () => ({ createClient: mocks.client }));
 vi.mock("@/lib/repo/cloud", () => ({
@@ -13,6 +14,10 @@ vi.mock("@/lib/repo/cloud", () => ({
 }));
 vi.mock("@ai-sdk/openai", () => ({ createOpenAI: mocks.provider }));
 vi.mock("ai", () => ({ streamText: mocks.stream }));
+vi.mock("@/lib/ai/usage.server", () => ({
+  reserveUsage: mocks.reserve,
+  usageConfigured: () => true,
+}));
 vi.mock("@/lib/ai/run-id.server", () => ({
   createLovableAiGatewayRunIdFetch: () => ({ fetch: vi.fn() }),
   getLovableAiGatewayRunId: () => "test-run",
@@ -46,8 +51,16 @@ describe("API autenticada de estudos", () => {
       content: "O núcleo contém DNA.",
     });
     mocks.list.mockResolvedValue([]);
+    mocks.reserve.mockResolvedValue(vi.fn().mockResolvedValue(undefined));
   });
   afterEach(() => vi.unstubAllEnvs());
+  it("recusa cota distribuída esgotada antes de chamar o modelo", async () => {
+    mocks.reserve.mockRejectedValueOnce(new Error("USAGE_LIMIT"));
+    expect(
+      (await handleAssistant(request({ messages: [{ role: "user", content: "Oi" }] }))).status,
+    ).toBe(429);
+    expect(mocks.stream).not.toHaveBeenCalled();
+  });
   it("informa falta de configuração e nunca fabrica resposta", async () => {
     vi.stubEnv("LOVABLE_API_KEY", "");
     expect(await assistantStatus().json()).toEqual({ configured: false });
@@ -64,6 +77,28 @@ describe("API autenticada de estudos", () => {
     ).toBe(401);
     expect(mocks.get).not.toHaveBeenCalled();
     expect(mocks.stream).not.toHaveBeenCalled();
+  });
+  it("limita bytes do corpo antes de chamar o modelo", async () => {
+    const response = await handleAssistant(
+      request({ messages: [{ role: "user", content: "x".repeat(300001) }] }),
+    );
+    expect(response.status).toBe(413);
+    expect(mocks.stream).not.toHaveBeenCalled();
+  });
+  it("aplica modo, nível e fonte verificada pelo repositório", async () => {
+    const response = await handleAssistant(
+      request({
+        messages: [{ role: "user", content: "Explique" }],
+        mode: "review",
+        level: "simple",
+        material_id: id,
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ sources: [{ id, name: "Biologia" }] });
+    expect(mocks.stream.mock.calls[0]![0].instructions).toContain("Modo revisão");
+    expect(mocks.stream.mock.calls[0]![0].instructions).toContain("Nível introdutório");
+    expect(mocks.stream.mock.calls[0]![0].maxOutputTokens).toBe(4000);
   });
   it("usa o bearer do usuário nas consultas com RLS e recusa material inacessível", async () => {
     mocks.get.mockResolvedValue(null);

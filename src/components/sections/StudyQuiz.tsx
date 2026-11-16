@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
-import { useSave } from "@/hooks/use-data";
+import { useSave, useRepo } from "@/hooks/use-data";
+import { useQueryClient } from "@tanstack/react-query";
+import { saveQuizDefinition } from "@/lib/repo/study-history";
 import { useStudyAI } from "@/hooks/use-study-ai";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,21 +12,84 @@ type Evaluation = { correct: boolean; feedback: string };
 export function GeneratedQuiz({
   quiz,
   source,
+  saved,
 }: {
   quiz: Extract<StudyOutput, { type: "quiz" }>;
   source: { material_id: string } | { material: { name: string; content: string } };
+  saved?: {
+    setId: string;
+    questionIds: string[];
+    attemptId: string;
+    answers: Record<number, string>;
+    evaluations: Record<number, Evaluation>;
+    complete: boolean;
+  };
 }) {
   const ai = useStudyAI();
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [evaluations, setEvaluations] = useState<Record<number, Evaluation>>({});
+  const repo = useRepo();
+  const qc = useQueryClient();
+  const [answers, setAnswers] = useState<Record<number, string>>(saved?.answers ?? {});
+  const [evaluations, setEvaluations] = useState<Record<number, Evaluation>>(
+    saved?.evaluations ?? {},
+  );
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
-  const [complete, setComplete] = useState(false);
-  const ids = useRef(quiz.questions.map(() => crypto.randomUUID()));
+  const [complete, setComplete] = useState(saved?.complete ?? false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
+  const setId = useRef(saved?.setId ?? crypto.randomUUID());
+  const attemptId = useRef(saved?.attemptId ?? crypto.randomUUID());
+  const ids = useRef(saved?.questionIds ?? quiz.questions.map(() => crypto.randomUUID()));
+  const optionIds = useRef(quiz.questions.map((q) => q.options.map(() => crypto.randomUUID())));
   const recorded = useRef(new Set<number>());
-  const pendingEvaluations = useRef<Record<number, Evaluation>>({});
+  const pendingEvaluations = useRef<Record<number, Evaluation>>(saved?.evaluations ?? {});
+  async function persistDraft() {
+    await saveQuizDefinition(
+      repo,
+      quiz,
+      { set: setId.current, questions: ids.current, options: optionIds.current },
+      source,
+    );
+    if (!(await repo.get("question_attempts", attemptId.current)))
+      await repo.insert("question_attempts", {
+        id: attemptId.current,
+        set_id: setId.current,
+        client_id: attemptId.current,
+        status: "in_progress",
+        started_at: new Date().toISOString(),
+        submitted_at: null,
+        score: null,
+        evaluation: "",
+      });
+    const previous = (await repo.list("question_attempt_answers")).filter(
+      (a) => a.attempt_id === attemptId.current,
+    );
+    for (const [index, value] of Object.entries(answers)) {
+      const questionId = ids.current[Number(index)]!;
+      const found = previous.find((a) => a.question_id === questionId);
+      if (found) await repo.update("question_attempt_answers", found.id, { answer: value });
+      else
+        await repo.insert("question_attempt_answers", {
+          id: crypto.randomUUID(),
+          set_id: setId.current,
+          attempt_id: attemptId.current,
+          question_id: questionId,
+          answer: value,
+          correct: null,
+          score: null,
+          evaluation: "",
+          answered_at: new Date().toISOString(),
+          evaluated_at: null,
+        });
+    }
+    await qc.invalidateQueries({ queryKey: [repo.mode] });
+  }
   const save = useSave<void>(
     async (repo) => {
+      await persistDraft();
+      const stored = (await repo.list("question_attempt_answers")).filter(
+        (a) => a.attempt_id === attemptId.current,
+      );
       for (const [index, question] of quiz.questions.entries()) {
         if (recorded.current.has(index)) continue;
         let evaluation = pendingEvaluations.current[index];
@@ -43,18 +108,32 @@ export function GeneratedQuiz({
           pendingEvaluations.current[index] = evaluation;
         }
         // Repetir após uma falha de rede não duplica uma resposta já gravada.
-        const exists = await repo.get("quiz_answers", ids.current[index]!);
+        const answerRow = stored.find((a) => a.question_id === ids.current[index]);
+        if (!answerRow) throw new Error("Resposta salva não encontrada.");
+        const exists = await repo.get("quiz_answers", answerRow.id);
         if (!exists)
           await repo.insert("quiz_answers", {
-            id: ids.current[index]!,
+            id: answerRow.id,
             question_id: ids.current[index]!,
             topic: question.topic,
             correct: evaluation.correct,
             answered_at: new Date().toISOString(),
           });
+        await repo.update("question_attempt_answers", answerRow.id, {
+          correct: evaluation.correct,
+          score: evaluation.correct ? 100 : 0,
+          evaluation: evaluation.feedback,
+          evaluated_at: new Date().toISOString(),
+        });
         recorded.current.add(index);
         setEvaluations((previous) => ({ ...previous, [index]: evaluation }));
       }
+      const correct = Object.values(pendingEvaluations.current).filter((e) => e.correct).length;
+      await repo.update("question_attempts", attemptId.current, {
+        status: "evaluated",
+        submitted_at: new Date().toISOString(),
+        score: Math.round((correct / quiz.questions.length) * 100),
+      });
     },
     { invalidate: ["quiz_answers"], success: "Resultados registrados no desempenho" },
   );
@@ -77,11 +156,14 @@ export function GeneratedQuiz({
       <h3 className="font-semibold">{quiz.title}</h3>
       <p className="text-xs text-muted-foreground">
         Responda todas as questões antes de corrigir. Questões discursivas são avaliadas pela IA e
-        podem conter erros. Os resultados são salvos em Desempenho; este questionário não é salvo
-        para outra sessão.
+        podem conter erros. Salve o progresso para continuar em Exercícios em outro dispositivo.
       </p>
       {quiz.questions.map((q, i) => (
-        <fieldset key={i} disabled={submitted} className="space-y-3 rounded-xl border p-4">
+        <fieldset
+          key={i}
+          disabled={submitted || complete || savingDraft}
+          className="space-y-3 rounded-xl border p-4"
+        >
           <legend className="px-1 text-sm font-medium">
             Questão {i + 1} · {q.topic}
           </legend>
@@ -132,6 +214,25 @@ export function GeneratedQuiz({
           {error}
         </p>
       )}
+      <Button
+        variant="outline"
+        disabled={savingDraft || save.isPending || complete}
+        onClick={async () => {
+          setSavingDraft(true);
+          setError("");
+          try {
+            await persistDraft();
+            setDraftSaved(true);
+          } catch (e) {
+            setError((e as Error).message);
+          } finally {
+            setSavingDraft(false);
+          }
+        }}
+      >
+        {savingDraft && <Spin />}
+        {draftSaved ? "Salvar progresso novamente" : "Salvar para continuar depois"}
+      </Button>
       <Button onClick={submit} disabled={!canSubmit || save.isPending || complete}>
         {save.isPending && <Spin />}
         {complete

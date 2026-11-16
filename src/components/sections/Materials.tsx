@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { FileText, Upload, Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
-import { useInsert, useRemove, useTable, useUpdate } from "@/hooks/use-data";
+import { useInsert, useRemove, useTable, useUpdate, useRepo } from "@/hooks/use-data";
 import {
   ConfirmDelete,
   Empty,
@@ -19,8 +19,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { MAX_CHARS, validateContent, validateFile } from "@/lib/core/files";
 import type { Material } from "@/lib/core/types";
+import { printMaterial } from "@/lib/print-material";
 
 export function Materials() {
+  const repo = useRepo();
+  const originals = useTable("material_files");
   const mats = useTable("materials");
   const ins = useInsert("materials", "Material salvo"),
     upd = useUpdate("materials", "Alterações salvas"),
@@ -31,6 +34,8 @@ export function Materials() {
   const [newNote, setNewNote] = useState(false);
   const [query, setQuery] = useState("");
   const [reading, setReading] = useState(false);
+  const [ocrEnabled, setOcrEnabled] = useState(false);
+  const [readProgress, setReadProgress] = useState("");
   const input = useRef<HTMLInputElement>(null);
   const filtered = useMemo(
     () =>
@@ -51,10 +56,10 @@ export function Materials() {
       let text: string;
       if (v.kind === "pdf") {
         const { extractPdfText } = await import("@/lib/pdf-extract");
-        text = await extractPdfText(file);
+        text = await extractPdfText(file, { ocr: ocrEnabled, onProgress: setReadProgress });
         if (!text.trim())
           throw new Error(
-            "Este PDF não tem texto extraível (provavelmente é digitalizado). Nada foi salvo.",
+            "Este PDF não tem texto extraível. Ative o OCR para reconhecer páginas digitalizadas. Nada foi salvo.",
           );
       } else if (v.kind === "docx" || v.kind === "pptx") {
         const { extractOfficeText } = await import("@/lib/document-extract");
@@ -62,15 +67,26 @@ export function Materials() {
       } else text = await file.text();
       const err = validateContent(text);
       if (err) throw new Error(err);
-      ins.mutate({
+      const id = crypto.randomUUID();
+      await ins.mutateAsync({
+        id,
         name: file.name.slice(0, 150),
         kind: v.kind === "docx" || v.kind === "pptx" ? "md" : v.kind,
         content: text,
       });
+      try {
+        await repo.uploadMaterialFile(id, file);
+        await originals.refetch();
+      } catch (e) {
+        throw new Error(
+          `O texto foi salvo. Não foi possível guardar o arquivo original: ${(e as Error).message}`,
+        );
+      }
     } catch (e) {
       toast.error((e as Error).message || "Não foi possível ler o arquivo.");
     } finally {
       setReading(false);
+      setReadProgress("");
       if (input.current) input.current.value = "";
     }
   }
@@ -79,7 +95,7 @@ export function Materials() {
     <div className="space-y-6">
       <PageHeader
         title="Materiais"
-        description={`Envie TXT/MD (até 1 MB), PDF com texto, DOCX ou PPTX (até 10 MB). É salvo o texto extraído; o arquivo original não é armazenado. Limite de ${MAX_CHARS.toLocaleString("pt-BR")} caracteres por material.`}
+        description={`Envie TXT/MD (até 1 MB), PDF com texto, DOCX ou PPTX (até 10 MB). O texto e o arquivo original são privados na sua conta. Limite de ${MAX_CHARS.toLocaleString("pt-BR")} caracteres por material.`}
         actions={
           <>
             <Button variant="outline" onClick={() => setNewNote(true)}>
@@ -100,6 +116,21 @@ export function Materials() {
           </>
         }
       />
+      <label className="flex items-start gap-2 text-sm text-muted-foreground">
+        <input
+          type="checkbox"
+          checked={ocrEnabled}
+          disabled={reading}
+          onChange={(e) => setOcrEnabled(e.target.checked)}
+        />
+        Reconhecer PDFs digitalizados com OCR local (português e inglês, até 20 páginas sem texto).
+        O primeiro uso baixa o mecanismo e os idiomas. Confira o texto reconhecido antes de estudar.
+      </label>
+      {readProgress && (
+        <p role="status" className="text-sm">
+          {readProgress}
+        </p>
+      )}
       <Dialog open={newNote} onOpenChange={setNewNote}>
         <DialogContent>
           <DialogHeader>
@@ -173,8 +204,11 @@ export function Materials() {
                   <ConfirmDelete
                     what={m.name}
                     onConfirm={() => {
-                      del.mutate(m.id);
-                      if (sel?.id === m.id) setSel(null);
+                      del.mutate(m.id, {
+                        onSuccess: () => {
+                          if (sel?.id === m.id) setSel(null);
+                        },
+                      });
                     }}
                   />
                 </li>
@@ -250,7 +284,44 @@ export function Materials() {
         </div>
       )}
       {sel && !editing && (
-        <StudyTools key={`${sel.id}-${sel.updated_at ?? sel.content}`} material={sel} />
+        <>
+          {originals.data
+            ?.filter((f) => f.material_id === sel.id)
+            .map((f) => (
+              <Button
+                key={f.id}
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const blob = await repo.downloadMaterialFile(f.id);
+                    const url = URL.createObjectURL(blob);
+                    Object.assign(document.createElement("a"), {
+                      href: url,
+                      download: f.original_name,
+                    }).click();
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  }
+                }}
+              >
+                Baixar original: {f.original_name}
+              </Button>
+            ))}
+          <Button
+            variant="outline"
+            onClick={() => {
+              try {
+                printMaterial(sel.name, sel.content);
+              } catch (e) {
+                toast.error((e as Error).message);
+              }
+            }}
+          >
+            Imprimir / salvar como PDF
+          </Button>
+          <StudyTools key={`${sel.id}-${sel.updated_at ?? sel.content}`} material={sel} />
+        </>
       )}
     </div>
   );

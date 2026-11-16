@@ -109,5 +109,7 @@ export function demoSeed(): { profile: Profile } & { [K in keyof Tables]: Tables
       },
     ],
     quiz_answers: [],
+    ...emptyLearningTables(),
   };
 }
+import { emptyLearningTables } from "@/lib/core/learning-data";

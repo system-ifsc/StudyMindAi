@@ -38,9 +38,18 @@ function Nav({ mode, current }: { mode: Mode; current: string }) {
           <SidebarGroupLabel>{g}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {SECTIONS.filter((s) => s.group === g).map((s) => (
+              {SECTIONS.filter(
+                (s) => s.group === g && !["atividades", "calendario"].includes(s.key),
+              ).map((s) => (
                 <SidebarMenuItem key={s.key}>
-                  <SidebarMenuButton asChild isActive={current === s.key} tooltip={s.label}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={
+                      current === s.key ||
+                      (s.key === "planejador" && ["atividades", "calendario"].includes(current))
+                    }
+                    tooltip={s.label}
+                  >
                     <Link
                       to={mode === "demo" ? "/demo/$section" : "/app/$section"}
                       params={{ section: s.key }}
@@ -156,6 +165,25 @@ export function AppShell({ mode, section }: { mode: Mode; section: string }) {
                 label={sec.key === "painel" ? "Voltar ao início" : "Voltar ao painel"}
               />
             </div>
+            {["planejador", "atividades", "calendario"].includes(sec.key) && (
+              <nav aria-label="Planejamento integrado" className="mb-6 flex flex-wrap gap-2">
+                {[
+                  ["planejador", "Plano de estudos"],
+                  ["atividades", "Atividades"],
+                  ["calendario", "Calendário"],
+                ].map(([key, label]) => (
+                  <Link
+                    key={key}
+                    to={mode === "demo" ? "/demo/$section" : "/app/$section"}
+                    params={{ section: key! }}
+                    aria-current={sec.key === key ? "page" : undefined}
+                    className={`rounded-xl border px-4 py-2 text-sm ${sec.key === key ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent"}`}
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+            )}
             <Suspense key={sec.key} fallback={<Loading />}>
               <sec.Component go={go} />
             </Suspense>

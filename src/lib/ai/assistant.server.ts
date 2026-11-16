@@ -2,7 +2,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, type ModelMessage } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import { createLovableAiGatewayRunIdFetch, getLovableAiGatewayRunId } from "./run-id.server";
-import { aiRequestSchema } from "@/lib/core/assistant";
+import { aiRequestSchema, tutorInstructions } from "@/lib/core/assistant";
 import {
   gradingSchema,
   parseStudyOutput,
@@ -12,6 +12,7 @@ import {
 import { createCloudRepo } from "@/lib/repo/cloud";
 import type { Database } from "@/integrations/supabase/types";
 import { today } from "@/lib/core/dates";
+import { reserveUsage, usageConfigured } from "./usage.server";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1";
 const MODEL = "openai/gpt-6-astra";
@@ -20,13 +21,23 @@ const SYSTEM =
 const RATE_WINDOW_MS = 60_000;
 const RATE_LIMIT = 20;
 const requestLog = new Map<string, number[]>();
+const MAX_BODY_BYTES = 300_000;
 
-const json = (body: unknown, status = 200) => Response.json(body, { status });
+const json = (body: unknown, status = 200) =>
+  Response.json(body, {
+    status,
+    headers: {
+      "Cache-Control": "no-store",
+      Vary: "Authorization",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 
 export function assistantStatus() {
   return json({
     configured: Boolean(
       process.env["LOVABLE_API_KEY"] &&
+      usageConfigured() &&
       process.env["SUPABASE_URL"] &&
       process.env["SUPABASE_PUBLISHABLE_KEY"],
     ),
@@ -34,7 +45,7 @@ export function assistantStatus() {
 }
 
 async function verifyUser(request: Request) {
-  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const token = request.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
   if (!token) return null;
   const url = process.env["SUPABASE_URL"],
     key = process.env["SUPABASE_PUBLISHABLE_KEY"];
@@ -61,7 +72,34 @@ export async function handleAssistant(request: Request) {
   const { user, repo } = auth;
   let raw: unknown;
   try {
-    raw = await request.json();
+    const reader = request.body?.getReader();
+    if (!reader) return json({ error: "Requisição vazia." }, 400);
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > MAX_BODY_BYTES) {
+          await reader.cancel();
+          return json(
+            { error: "Requisição grande demais. Reduza o histórico ou o material." },
+            413,
+          );
+        }
+        chunks.push(value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+    const bytes = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    raw = JSON.parse(new TextDecoder().decode(bytes));
   } catch {
     return json({ error: "Requisição inválida." }, 400);
   }
@@ -106,7 +144,7 @@ export async function handleAssistant(request: Request) {
         repo.list("quiz_answers"),
         repo.list("study_sessions"),
       ]);
-      progress = `\nProgresso real do estudante (amostra de até 5000 registros por tabela): ${JSON.stringify(progressContext(cards, answers, sessions, today()))}`;
+      progress = `\nProgresso real do estudante: ${JSON.stringify(progressContext(cards, answers, sessions, today()))}`;
     }
   } catch {
     return json(
@@ -135,11 +173,29 @@ export async function handleAssistant(request: Request) {
     fetch: runIdFetch.fetch,
   });
   let failure: unknown = null;
+  let finalize: () => Promise<void>;
+  try {
+    finalize = await reserveUsage(user.id);
+  } catch (e) {
+    const limited = (e as Error).message === "USAGE_LIMIT";
+    return json(
+      {
+        error: limited
+          ? "Seu limite diário ou mensal de IA foi atingido."
+          : "Os limites de uso da IA não estão configurados ou estão indisponíveis.",
+      },
+      limited ? 429 : 503,
+    );
+  }
   try {
     const result = streamText({
       model: provider.responses(MODEL),
-      instructions: SYSTEM,
-      maxOutputTokens: 14000,
+      instructions:
+        SYSTEM +
+        (body.action !== "generate" && body.action !== "grade"
+          ? `\n${tutorInstructions(body.mode, body.level)}`
+          : ""),
+      maxOutputTokens: body.action === "generate" ? 14000 : body.action === "grade" ? 2000 : 4000,
       messages:
         mat || progress ? [{ role: "user", content: mat + progress }, ...messages] : messages,
       abortSignal: request.signal,
@@ -192,7 +248,10 @@ export async function handleAssistant(request: Request) {
         );
       }
     }
-    return json({ text });
+    return json({
+      text,
+      sources: material ? [{ name: material.name, id: body.material_id ?? null }] : [],
+    });
   } catch (e) {
     const status = (e as { statusCode?: number }).statusCode ?? 500;
     const msg =
@@ -205,5 +264,7 @@ export async function handleAssistant(request: Request) {
             : "O assistente está indisponível no momento.";
     console.error("assistant error", status);
     return json({ error: msg }, status >= 400 && status < 600 ? status : 500);
+  } finally {
+    await finalize().catch(() => console.error("ai usage finalization unavailable"));
   }
 }

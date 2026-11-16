@@ -56,7 +56,7 @@ export const SECTIONS: Section[] = [
     group: "Estudo",
     Component: Calendar,
   },
-  { key: "planejador", label: "Planejador", icon: Cpu, group: "Estudo", Component: Planner },
+  { key: "planejador", label: "Planejamento", icon: Cpu, group: "Estudo", Component: Planner },
   { key: "foco", label: "Foco", icon: Timer, group: "Estudo", Component: Focus },
   { key: "flashcards", label: "Flashcards", icon: Layers, group: "Prática", Component: Flashcards },
   { key: "exercicios", label: "Exercícios", icon: Brain, group: "Prática", Component: Exercises },

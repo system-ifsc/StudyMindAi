@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 const uuid = z.string().uuid();
-const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const ts = z.string().min(10).max(40);
+const date = z.iso.date();
+const ts = z.iso.datetime({ offset: true });
 
 export const backupSchema = z
   .object({
@@ -95,6 +95,20 @@ export const backupSchema = z
       .max(20000),
   })
   .superRefine((b, ctx) => {
+    for (const [table, rows] of Object.entries({
+      subjects: b.subjects,
+      tasks: b.tasks,
+      sessions: b.sessions,
+      flashcards: b.flashcards,
+      goals: b.goals,
+      materials: b.materials,
+      quiz_answers: b.quiz_answers,
+    })) {
+      if (new Set(rows.map((row) => row.id)).size !== rows.length)
+        ctx.addIssue({ code: "custom", message: `IDs duplicados em ${table}.` });
+    }
+    if (new Set(b.sessions.map((s) => s.client_id)).size !== b.sessions.length)
+      ctx.addIssue({ code: "custom", message: "Sessões com client_id duplicado." });
     const subjects = new Set(b.subjects.map((s) => s.id));
     const tasks = new Set(b.tasks.map((t) => t.id));
     for (const t of b.tasks)
@@ -104,11 +118,16 @@ export const backupSchema = z
           message: `Atividade "${t.title}" aponta para disciplina inexistente.`,
         });
     for (const s of b.sessions) {
+      if (Date.parse(s.ended_at) < Date.parse(s.started_at))
+        ctx.addIssue({ code: "custom", message: "Sessão termina antes de começar." });
       if (s.subject_id && !subjects.has(s.subject_id))
         ctx.addIssue({ code: "custom", message: "Sessão aponta para disciplina inexistente." });
       if (s.task_id && !tasks.has(s.task_id))
         ctx.addIssue({ code: "custom", message: "Sessão aponta para atividade inexistente." });
     }
+    for (const card of b.flashcards)
+      if (card.subject_id && !subjects.has(card.subject_id))
+        ctx.addIssue({ code: "custom", message: "Cartão aponta para disciplina inexistente." });
   });
 export type Backup = z.infer<typeof backupSchema>;
 

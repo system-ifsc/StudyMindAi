@@ -14,6 +14,7 @@ import {
 } from "@/lib/core/study-tools";
 import type { Material } from "@/lib/core/types";
 import { GeneratedQuiz } from "./StudyQuiz";
+import { printMaterial } from "@/lib/print-material";
 
 export function StudyTools({
   material,
@@ -233,6 +234,18 @@ export function StudyTools({
                 <div className="max-h-96 overflow-auto whitespace-pre-wrap text-sm">
                   {result.content}
                 </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    try {
+                      printMaterial(result.title, `Fonte: ${sourceName}\n\n${result.content}`);
+                    } catch (e) {
+                      setSaveError((e as Error).message);
+                    }
+                  }}
+                >
+                  Imprimir / salvar como PDF
+                </Button>
               </>
             )}
             {result.type === "flashcards" && (

@@ -228,6 +228,32 @@ describe("backup JSON", () => {
   it("aceita um backup válido", () => {
     expect(parseBackup(JSON.stringify(base)).ok).toBe(true);
   });
+  it("rejeita datas impossíveis, IDs duplicados e cartões órfãos", () => {
+    const id = "11111111-1111-4111-8111-111111111111";
+    const subject = { id, name: "SQL", color: "blue" };
+    expect(parseBackup(JSON.stringify({ ...base, subjects: [subject, subject] })).ok).toBe(false);
+    expect(parseBackup(JSON.stringify({ ...base, exported_at: "not-a-timestamp" })).ok).toBe(false);
+    const card = {
+      id,
+      subject_id: id,
+      front: "Q",
+      back: "A",
+      due_date: "2026-11-16",
+      interval_days: 0,
+      ease: 2.5,
+      reps: 0,
+    };
+    expect(parseBackup(JSON.stringify({ ...base, flashcards: [card] })).ok).toBe(false);
+    expect(
+      parseBackup(
+        JSON.stringify({
+          ...base,
+          subjects: [subject],
+          flashcards: [{ ...card, due_date: "2026-02-31" }],
+        }),
+      ).ok,
+    ).toBe(false);
+  });
   it("rejeita JSON quebrado e app errado", () => {
     expect(parseBackup("{").ok).toBe(false);
     expect(parseBackup(JSON.stringify({ ...base, app: "outro" })).ok).toBe(false);
@@ -402,5 +428,39 @@ describe("ferramentas de estudo com IA", () => {
     });
     expect(result.topics[0]).toMatchObject({ topic: "Redes", pct: 50 });
     expect(progressContext([], [], [], "2026-11-14").questions_answered).toBe(0);
+  });
+});
+
+describe("central de aprendizagem", () => {
+  it("recomenda a partir dos registros sem depender da ordem das atividades", async () => {
+    const { learningRecommendations } = await import("@/lib/core/learning");
+    const tasks = [task("b", "2026-11-20", 30), task("a", MON, 30)];
+    const before = structuredClone(tasks);
+    expect(learningRecommendations(tasks, [], [], [], MON)[0]?.title).toBe("a");
+    expect(learningRecommendations([...tasks].reverse(), [], [], [], MON)).toEqual(
+      learningRecommendations(tasks, [], [], [], MON),
+    );
+    expect(tasks).toEqual(before);
+    expect(learningRecommendations([], [], [], [], MON)[0]?.section).toBe("materiais");
+  });
+  it("não recomenda dificuldade sem pelo menos três respostas", async () => {
+    const { learningRecommendations } = await import("@/lib/core/learning");
+    const answer = { id: "1", question_id: "1", topic: "SQL", correct: false, answered_at: MON };
+    expect(learningRecommendations([], [], [answer], [], MON)[0]?.section).toBe("materiais");
+    expect(learningRecommendations([], [], [answer, answer, answer], [], MON)[0]?.title).toBe(
+      "Praticar SQL",
+    );
+  });
+});
+
+describe("modos do tutor", () => {
+  it("valida modos e níveis com padrões compatíveis", () => {
+    const messages = [{ role: "user", content: "Explique SQL" }];
+    expect(assistantRequestSchema.parse({ messages })).toMatchObject({
+      mode: "teacher",
+      level: "standard",
+    });
+    expect(assistantRequestSchema.safeParse({ messages, mode: "system" }).success).toBe(false);
+    expect(assistantRequestSchema.safeParse({ messages, level: "arbitrário" }).success).toBe(false);
   });
 });

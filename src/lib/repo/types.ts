@@ -15,5 +15,7 @@ export interface Repo {
   remove(table: TableName, id: string): Promise<void>;
   /** Registro idempotente: repetir o mesmo client_id não duplica a sessão. */
   recordSession(row: NewRow<"study_sessions">): Promise<void>;
+  uploadMaterialFile(materialId: string, file: File): Promise<void>;
+  downloadMaterialFile(fileId: string): Promise<Blob>;
   importAll(b: Backup): Promise<void>;
 }

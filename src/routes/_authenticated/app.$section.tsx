@@ -1,6 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app/AppShell";
 import { DataProvider } from "@/hooks/use-data";
 import { createCloudRepo } from "@/lib/repo/cloud";
@@ -10,12 +9,8 @@ export const Route = createFileRoute("/_authenticated/app/$section")({
   beforeLoad: async ({ context, params }) => {
     if (!findSection(params.section))
       throw redirect({ to: "/app/$section", params: { section: "painel" } });
-    const { data } = await supabase
-      .from("profiles")
-      .select("onboarded")
-      .eq("id", context.user.id)
-      .maybeSingle();
-    if (!data?.onboarded) throw redirect({ to: "/onboarding" });
+    const profile = await createCloudRepo(context.user.id).getProfile();
+    if (!profile.onboarded) throw redirect({ to: "/onboarding" });
   },
   head: ({ params }) => ({
     meta: [

@@ -155,3 +155,45 @@ describe("integração das ferramentas com Repo", () => {
     expect(ai.request).not.toHaveBeenCalled();
   });
 });
+
+describe("histórico persistente de atividades", () => {
+  it("salva enunciados e respostas e retoma a tentativa após remontar", async () => {
+    const { SavedQuizzes } = await import("@/components/sections/SavedQuizzes");
+    const repo = createMemoryRepo(() => ({ ...demoSeed(), materials: [material] }));
+    const quiz = {
+      type: "quiz" as const,
+      title: "Simulado salvo",
+      questions: [
+        {
+          type: "multiple_choice" as const,
+          topic: "Biologia",
+          question: "Onde está o DNA?",
+          options: ["Núcleo", "Parede", "Membrana"],
+          correct: 0,
+          answer: "Núcleo",
+          explanation: "O núcleo contém DNA.",
+        },
+      ],
+    };
+    const view = mount(<GeneratedQuiz quiz={quiz} source={{ material_id: material.id }} />, repo);
+    fireEvent.click(screen.getByRole("radio", { name: "Núcleo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar para continuar depois" }));
+    await screen.findByRole("button", { name: "Salvar progresso novamente" });
+    expect(await repo.list("generated_questions")).toHaveLength(1);
+    expect(await repo.list("question_attempt_answers")).toHaveLength(1);
+    view.unmount();
+    mount(<SavedQuizzes />, repo);
+    fireEvent.click(await screen.findByRole("button", { name: "Simulado salvo · Continuar" }));
+    expect(await screen.findByRole("radio", { name: "Núcleo" })).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "Corrigir e registrar resultados" }));
+    await screen.findByRole("button", { name: "Resultados registrados" });
+    expect((await repo.list("question_attempts"))[0]).toMatchObject({
+      status: "evaluated",
+      score: 100,
+    });
+    expect((await repo.list("question_attempt_answers"))[0]).toMatchObject({
+      correct: true,
+      answer: "0",
+    });
+  });
+});

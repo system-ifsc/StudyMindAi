@@ -4,7 +4,7 @@ import { useProfile, useTable } from "@/hooks/use-data";
 import { Empty, ErrorState, Loading, PageHeader, Panel } from "@/components/app/ui";
 import { Badge } from "@/components/ui/badge";
 import { formatBR, formatMinutes, today, WEEKDAYS_SHORT } from "@/lib/core/dates";
-import { buildPlan } from "@/lib/core/planner";
+import { buildAdaptivePlan } from "@/lib/core/adaptive-plan";
 import type { SectionProps } from "./registry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,10 @@ export function Planner({ go }: SectionProps) {
   const [horizon, setHorizon] = useState(14);
   const [minBlock, setMinBlock] = useState(15);
   const [loadedOwner, setLoadedOwner] = useState<string | null>(null);
-  const tasks = useTable("tasks"),
+  const subjects = useTable("subjects"),
+    answers = useTable("quiz_answers"),
+    sessions = useTable("study_sessions"),
+    tasks = useTable("tasks"),
     profile = useProfile();
   useEffect(() => {
     const id = profile.data?.id;
@@ -42,19 +45,26 @@ export function Planner({ go }: SectionProps) {
       // O navegador pode bloquear armazenamento local.
     }
   }, [profile.data?.id, loadedOwner, horizon, minBlock]);
-  if (tasks.isLoading || profile.isLoading) return <Loading />;
-  if (tasks.error || profile.error) return <ErrorState error={(tasks.error || profile.error)!} />;
+  if ([tasks, profile, subjects, answers, sessions].some((q) => q.isLoading)) return <Loading />;
+  const error = [tasks, profile, subjects, answers, sessions].find((q) => q.error)?.error;
+  if (error) return <ErrorState error={error} />;
   const t = today(),
     p = profile.data!;
-  const { blocks, unscheduled } = buildPlan(tasks.data!, p.availability, t, horizon, minBlock);
+  const { blocks, unscheduled, focus } = buildAdaptivePlan(
+    tasks.data!,
+    p.availability,
+    t,
+    subjects.data!,
+    answers.data!,
+    sessions.data!,
+    horizon,
+    minBlock,
+  );
   const byDay = blocks.reduce<Record<string, typeof blocks>>(
     (m, b) => ((m[b.date] ??= []).push(b), m),
     {},
   );
-  const pending = tasks
-    .data!.filter((x) => !x.done)
-    .sort((a, b) => b.priority - a.priority || a.due_date.localeCompare(b.due_date));
-  const top = pending.slice(0, Math.max(1, Math.ceil(pending.length * 0.2)));
+  const top = focus;
   return (
     <div className="space-y-6">
       <PageHeader
@@ -64,10 +74,10 @@ export function Planner({ go }: SectionProps) {
       <div className="flex items-start gap-3 rounded-2xl border bg-surface p-4 text-sm">
         <Cpu className="mt-0.5 size-4 text-primary" aria-hidden />
         <p>
-          <strong>Algoritmo determinístico, não IA.</strong> Regra: ordena por prazo, depois
-          prioridade e título; preenche cada dia até o limite de minutos disponíveis, em blocos de
-          no mínimo {minBlock} min, sem passar do prazo. Atrasadas entram hoje. Mesmos dados → mesmo
-          plano.
+          <strong>Algoritmo determinístico, não IA.</strong> Adapta prioridades aos acertos dos
+          simulados e ao foco 80/20, respeitando os prazos. Desconta sessões já registradas e
+          redistribui atividades atrasadas nos dias disponíveis. Blocos de no mínimo {minBlock} min.
+          Mesmos dados → mesmo plano.
         </p>
       </div>
       <Panel
@@ -171,15 +181,19 @@ export function Planner({ go }: SectionProps) {
           ))}
         </div>
       )}
-      {pending.length > 0 && (
+      {top.length > 0 && (
         <Panel title="Foco 80/20">
           <p className="mb-3 text-sm text-muted-foreground">
-            Os 20% de atividades com maior prioridade e prazo mais próximo — comece por elas.
+            Os 20% de atividades com maior prioridade e dificuldade observada. É uma heurística de
+            foco, sem garantia de 80% de resultado.
           </p>
           <ul className="space-y-1 text-sm">
-            {top.map((x) => (
+            {top.map(({ task: x, reason }) => (
               <li key={x.id}>
-                • {x.title} <span className="text-muted-foreground">({formatBR(x.due_date)})</span>
+                • {x.title}{" "}
+                <span className="text-muted-foreground">
+                  ({formatBR(x.due_date)}) · {reason}
+                </span>
               </li>
             ))}
           </ul>

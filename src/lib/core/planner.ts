@@ -26,6 +26,7 @@ export function buildPlan(
   start: string,
   horizonDays = 14,
   minBlock = 15,
+  rescheduleOverdue = false,
 ): PlanResult {
   const pending = tasks
     .filter((t) => !t.done)
@@ -46,7 +47,11 @@ export function buildPlan(
   for (const t of pending) {
     let remaining = t.duration_min;
     const late = t.due_date < start;
-    const lastDay = late ? start : t.due_date;
+    const lastDay = late
+      ? rescheduleOverdue
+        ? addDays(start, horizonDays - 1)
+        : start
+      : t.due_date;
     for (let i = 0; i < horizonDays && remaining > 0; i++) {
       const d = addDays(start, i);
       if (d > lastDay) break;

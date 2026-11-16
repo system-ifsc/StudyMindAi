@@ -102,6 +102,24 @@ export function StudyTools({
         output.type === "flashcards"
           ? output.cards.map((c) => ({ ...c, id: crypto.randomUUID() }))
           : [];
+      // Persistir assim que a geração termina permite retomar em outro dispositivo.
+      try {
+        if (output.type === "text") {
+          await doc.mutateAsync({
+            name: output.title,
+            kind: "md",
+            content: `Fonte: ${selected?.name ?? "Texto para estudo"}\n\n${output.content}`,
+          });
+          setSaved(true);
+        } else if (output.type === "flashcards") {
+          await saveCards.mutateAsync();
+          setSaved(true);
+        }
+      } catch (error) {
+        setSaveError(
+          `Conteúdo gerado, mas o salvamento falhou. Use o botão para tentar novamente. ${(error as Error).message}`,
+        );
+      }
     } catch {
       /* A mensagem de erro fica no painel; resultados anteriores continuam acessíveis. */
     }
@@ -215,8 +233,8 @@ export function StudyTools({
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          Análise de materiais de até 60 mil caracteres; textos colados até 15 mil. Revise o
-          conteúdo antes de salvar.
+          Análise de materiais de até 60 mil caracteres; textos colados até 15 mil. Resumos e
+          cartões são salvos automaticamente. Revise o conteúdo gerado.
         </p>
         {ai.error && (
           <p role="alert" className="text-sm text-destructive">

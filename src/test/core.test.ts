@@ -1,3 +1,4 @@
+import { buildAdaptivePlan } from "@/lib/core/adaptive-plan";
 import { describe, expect, it } from "vitest";
 import { buildPlan } from "@/lib/core/planner";
 import { review } from "@/lib/core/srs";
@@ -462,5 +463,50 @@ describe("modos do tutor", () => {
     });
     expect(assistantRequestSchema.safeParse({ messages, mode: "system" }).success).toBe(false);
     expect(assistantRequestSchema.safeParse({ messages, level: "arbitrário" }).success).toBe(false);
+  });
+});
+
+// Planejamento adaptativo usa somente evidências registradas.
+describe("plano adaptativo", () => {
+  it("redistribui atrasadas e desconta minutos estudados sem alterar a atividade", () => {
+    const original = task("late", "2026-11-15", 90);
+    const session = {
+      id: "s",
+      client_id: "s",
+      task_id: "late",
+      subject_id: null,
+      title: "",
+      started_at: "2026-11-15T12:00:00Z",
+      ended_at: "2026-11-15T12:30:00Z",
+      minutes: 30,
+    };
+    const result = buildAdaptivePlan([original], [30, 30, 0, 0, 0, 0, 0], MON, [], [], [session]);
+    expect(result.blocks.map((b) => b.minutes)).toEqual([30, 30]);
+    expect(result.unscheduled).toEqual([]);
+    expect(original.duration_min).toBe(90);
+  });
+  it("prioriza dificuldades com amostra mínima e mantém o resultado determinístico", () => {
+    const tasks = [task("a", "2026-11-20", 30), task("b", "2026-11-20", 30)];
+    const answers = Array.from({ length: 3 }, (_, i) => ({
+      id: String(i),
+      question_id: String(i),
+      topic: tasks[1]!.title,
+      correct: false,
+      answered_at: MON,
+    }));
+    const run = (rows: typeof tasks) =>
+      buildAdaptivePlan(rows, [30, 30, 0, 0, 0, 0, 0], MON, [], answers, []);
+    expect(run(tasks).focus[0]!.task.id).toBe("b");
+    expect(run(tasks)).toEqual(run([...tasks].reverse()));
+    expect(
+      buildAdaptivePlan(
+        tasks,
+        [30, 30, 0, 0, 0, 0, 0],
+        MON,
+        [],
+        answers.slice(0, 2),
+        [],
+      ).evidence.every((r) => r.accuracy === null),
+    ).toBe(true);
   });
 });

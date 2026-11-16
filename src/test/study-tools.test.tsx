@@ -62,7 +62,6 @@ describe("integração das ferramentas com Repo", () => {
       repo,
     );
     fireEvent.click(screen.getByRole("button", { name: "Gerar com IA" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Salvar cartões para revisão" }));
     await screen.findByRole("alert");
     expect((await repo.list("flashcards")).length).toBe(1);
     fireEvent.click(screen.getByRole("button", { name: "Salvar cartões para revisão" }));
@@ -82,7 +81,6 @@ describe("integração das ferramentas com Repo", () => {
     });
     mount(<StudyTools material={material} />, repo);
     fireEvent.click(screen.getByRole("button", { name: "Gerar com IA" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Salvar em Materiais" }));
     await screen.findByRole("button", { name: "Salvo" });
     const materials = await repo.list("materials");
     expect(materials).toHaveLength(2);
@@ -177,8 +175,7 @@ describe("histórico persistente de atividades", () => {
     };
     const view = mount(<GeneratedQuiz quiz={quiz} source={{ material_id: material.id }} />, repo);
     fireEvent.click(screen.getByRole("radio", { name: "Núcleo" }));
-    fireEvent.click(screen.getByRole("button", { name: "Salvar para continuar depois" }));
-    await screen.findByRole("button", { name: "Salvar progresso novamente" });
+    await screen.findByRole("button", { name: "Salvar progresso novamente" }, { timeout: 4000 });
     expect(await repo.list("generated_questions")).toHaveLength(1);
     expect(await repo.list("question_attempt_answers")).toHaveLength(1);
     view.unmount();

@@ -12,19 +12,29 @@ import {
   toISODate,
   WEEKDAYS_SHORT,
 } from "@/lib/core/dates";
-import { buildPlan } from "@/lib/core/planner";
+import { buildAdaptivePlan } from "@/lib/core/adaptive-plan";
 import { cn } from "@/lib/utils";
 
 export function Calendar() {
-  const tasks = useTable("tasks"),
+  const answers = useTable("quiz_answers"),
+    tasks = useTable("tasks"),
     profile = useProfile(),
     subjects = useTable("subjects"),
     sessions = useTable("study_sessions");
   const [week, setWeek] = useState(() => startOfWeek(today()));
-  if (tasks.isLoading || profile.isLoading) return <Loading />;
-  if (tasks.error || profile.error) return <ErrorState error={(tasks.error || profile.error)!} />;
+  if ([tasks, profile, subjects, sessions, answers].some((q) => q.isLoading)) return <Loading />;
+  const error = [tasks, profile, subjects, sessions, answers].find((q) => q.error)?.error;
+  if (error) return <ErrorState error={error} />;
   const t = today();
-  const plan = buildPlan(tasks.data!, profile.data!.availability, t, 28).blocks;
+  const plan = buildAdaptivePlan(
+    tasks.data!,
+    profile.data!.availability,
+    t,
+    subjects.data!,
+    answers.data!,
+    sessions.data!,
+    28,
+  ).blocks;
   const days = Array.from({ length: 7 }, (_, i) => addDays(week, i));
   const color = (id: string | null) => subjects.data?.find((s) => s.id === id)?.color;
   return (

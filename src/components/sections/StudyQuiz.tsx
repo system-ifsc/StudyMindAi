@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSave, useRepo } from "@/hooks/use-data";
 import { useQueryClient } from "@tanstack/react-query";
 import { saveQuizDefinition } from "@/lib/repo/study-history";
@@ -84,6 +84,28 @@ export function GeneratedQuiz({
     }
     await qc.invalidateQueries({ queryKey: [repo.mode] });
   }
+  const draftInFlight = useRef(false);
+  const draftWriter = useRef(persistDraft);
+  useEffect(() => {
+    draftWriter.current = persistDraft;
+  });
+  useEffect(() => {
+    if (complete || submitted) return;
+    const timer = setTimeout(() => {
+      if (draftInFlight.current) return;
+      draftInFlight.current = true;
+      setSavingDraft(true);
+      void draftWriter
+        .current()
+        .then(() => setDraftSaved(true))
+        .catch((e: Error) => setError(`Não foi possível salvar automaticamente. ${e.message}`))
+        .finally(() => {
+          draftInFlight.current = false;
+          setSavingDraft(false);
+        });
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [answers, complete, submitted]);
   const save = useSave<void>(
     async (repo) => {
       await persistDraft();
@@ -156,7 +178,8 @@ export function GeneratedQuiz({
       <h3 className="font-semibold">{quiz.title}</h3>
       <p className="text-xs text-muted-foreground">
         Responda todas as questões antes de corrigir. Questões discursivas são avaliadas pela IA e
-        podem conter erros. Salve o progresso para continuar em Exercícios em outro dispositivo.
+        podem conter erros. O progresso é salvo automaticamente para continuar em Exercícios em
+        outro dispositivo.
       </p>
       {quiz.questions.map((q, i) => (
         <fieldset

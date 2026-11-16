@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { addDays, formatBR, formatMinutes, today } from "@/lib/core/dates";
 import { completion, dueCards, minutesInRange, overdueTasks, streak } from "@/lib/core/metrics";
-import { buildPlan } from "@/lib/core/planner";
+import { buildAdaptivePlan } from "@/lib/core/adaptive-plan";
 import { learningRecommendations } from "@/lib/core/learning";
 import type { SectionProps } from "./registry";
 
@@ -37,7 +37,15 @@ export function Overview({ go }: SectionProps) {
   const comp = completion(ts);
   const due = dueCards(cards.data ?? [], t).length;
   const late = overdueTasks(ts, t);
-  const todayPlan = buildPlan(ts, p.availability, t, 14).blocks.filter((b) => b.date === t);
+  const todayPlan = buildAdaptivePlan(
+    ts,
+    p.availability,
+    t,
+    subjects.data ?? [],
+    answers.data ?? [],
+    ss,
+    14,
+  ).blocks.filter((b) => b.date === t);
   const subj = (id: string | null) => subjects.data?.find((s) => s.id === id);
   const upcoming = ts
     .filter((x) => !x.done)

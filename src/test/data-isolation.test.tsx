@@ -31,3 +31,19 @@ it("não exibe dados em cache da conta anterior ao trocar o repositório", async
   expect(screen.queryByText("Conta A")).toBeNull();
   await screen.findByText("Conta B");
 });
+
+it("preserva sessões e cartões sem referências órfãs após excluir disciplina e atividade", async () => {
+  const seed = demoSeed();
+  const subjectId = seed.subjects[2]!.id;
+  const task = seed.tasks.find((r) => r.subject_id === subjectId)!;
+  seed.study_sessions[0]!.subject_id = subjectId;
+  seed.study_sessions[0]!.task_id = task.id;
+  const repo = createMemoryRepo(() => seed);
+  await repo.remove("subjects", subjectId);
+  expect((await repo.list("tasks")).find((r) => r.id === task.id)?.subject_id).toBeNull();
+  expect((await repo.list("flashcards"))[0]!.subject_id).toBeNull();
+  expect((await repo.list("study_sessions"))[0]!.subject_id).toBeNull();
+  await repo.remove("tasks", task.id);
+  expect((await repo.list("study_sessions"))[0]!.task_id).toBeNull();
+  expect(await repo.list("study_sessions")).toHaveLength(seed.study_sessions.length);
+});

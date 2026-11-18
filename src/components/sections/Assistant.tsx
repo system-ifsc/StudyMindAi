@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Send, Sparkles, Info, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/lib/auth/client";
 import { useRepo, useTable, useSave } from "@/hooks/use-data";
 import { NativeSelect, PageHeader, Panel, Spin } from "@/components/app/ui";
 import { Button } from "@/components/ui/button";
@@ -134,7 +134,7 @@ export function Assistant() {
       });
       setInput("");
       await qc.invalidateQueries({ queryKey: [repo.mode] });
-      const { data } = await supabase.auth.getSession();
+      const { data } = await auth.getSession();
       const material = mats.data?.find((m) => m.id === mat);
       const r = await fetch("/api/assistant", {
         method: "POST",

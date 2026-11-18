@@ -148,7 +148,7 @@ export function StudyTools({
               ? "Verificando disponibilidade da IA…"
               : ai.demo
                 ? "A geração com IA exige uma conta real; está desativada na demonstração."
-                : "IA não configurada ou indisponível. Configure as variáveis do servidor e os créditos do Lovable. Nenhum conteúdo será simulado."}
+                : "IA não configurada ou indisponível. Configure as variáveis do servidor e o acesso ao provedor de IA. Nenhum conteúdo será simulado."}
           </p>
         )}
         {!material && (

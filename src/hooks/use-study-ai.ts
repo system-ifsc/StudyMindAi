@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/lib/auth/client";
 import { useRepo } from "./use-data";
 
 /** O modo demo nunca chama a API autenticada. */
@@ -37,7 +37,7 @@ export function useStudyAI() {
     setBusy(true);
     setError("");
     try {
-      const { data, error: authError } = await supabase.auth.getSession();
+      const { data, error: authError } = await auth.getSession();
       if (authError || !data.session) throw new Error("Entre novamente na sua conta.");
       const response = await fetch("/api/assistant", {
         method: "POST",

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Loading } from "./ui";
 import { LogOut, Moon, Sun, FlaskConical } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/lib/auth/client";
 import {
   Sidebar,
   SidebarContent,
@@ -112,7 +112,7 @@ export function AppShell({ mode, section }: { mode: Mode; section: string }) {
                   variant="ghost"
                   aria-label="Sair"
                   onClick={async () => {
-                    await supabase.auth.signOut();
+                    await auth.signOut();
                     navigate({ to: "/login" });
                   }}
                 >

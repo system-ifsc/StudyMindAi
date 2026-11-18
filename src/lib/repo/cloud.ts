@@ -120,7 +120,14 @@ export function createCloudRepo(userId: string, client: SupabaseClient<Database>
         }
       }
       if (table === "subjects") {
-        for (const linked of ["materials", "study_conversations", "generated_question_sets"]) {
+        for (const linked of [
+          "tasks",
+          "flashcards",
+          "study_sessions",
+          "materials",
+          "study_conversations",
+          "generated_question_sets",
+        ]) {
           const result = await from(linked)
             .update({ subject_id: null })
             .eq("user_id", userId)
@@ -129,7 +136,7 @@ export function createCloudRepo(userId: string, client: SupabaseClient<Database>
         }
       }
       if (table === "tasks") {
-        for (const linked of ["study_conversations", "generated_question_sets"]) {
+        for (const linked of ["study_sessions", "study_conversations", "generated_question_sets"]) {
           const result = await from(linked)
             .update({ task_id: null })
             .eq("user_id", userId)

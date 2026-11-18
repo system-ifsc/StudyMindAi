@@ -18,10 +18,6 @@ vi.mock("@/lib/ai/usage.server", () => ({
   reserveUsage: mocks.reserve,
   usageConfigured: () => true,
 }));
-vi.mock("@/lib/ai/run-id.server", () => ({
-  createLovableAiGatewayRunIdFetch: () => ({ fetch: vi.fn() }),
-  getLovableAiGatewayRunId: () => "test-run",
-}));
 import { assistantStatus, handleAssistant } from "@/lib/ai/assistant.server";
 
 const id = "11111111-1111-4111-8111-111111111111";
@@ -35,12 +31,15 @@ function request(body: unknown, token = "test-token") {
 describe("API autenticada de estudos", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubEnv("LOVABLE_API_KEY", "test-server-secret");
+    vi.stubEnv("VITE_BACKEND", "supabase");
+    vi.stubEnv("AI_API_KEY", "test-server-secret");
+    vi.stubEnv("AI_BASE_URL", "https://provider.example/v1");
+    vi.stubEnv("AI_MODEL", "test-model");
     vi.stubEnv("SUPABASE_URL", "https://example.supabase.co");
     vi.stubEnv("SUPABASE_PUBLISHABLE_KEY", "public-key");
     mocks.client.mockReturnValue({ auth: { getUser: mocks.getUser } });
     mocks.getUser.mockResolvedValue({ data: { user: { id: crypto.randomUUID() } } });
-    mocks.provider.mockReturnValue({ responses: () => "test-model" });
+    mocks.provider.mockReturnValue({ chat: () => "test-model" });
     mocks.stream.mockReturnValue({
       text: Promise.resolve('{"type":"text","title":"Resumo","content":"O núcleo contém DNA."}'),
     });
@@ -62,7 +61,7 @@ describe("API autenticada de estudos", () => {
     expect(mocks.stream).not.toHaveBeenCalled();
   });
   it("informa falta de configuração e nunca fabrica resposta", async () => {
-    vi.stubEnv("LOVABLE_API_KEY", "");
+    vi.stubEnv("AI_API_KEY", "");
     expect(await assistantStatus().json()).toEqual({ configured: false });
     expect(
       (await handleAssistant(request({ action: "generate", tool: "summary", material_id: id })))

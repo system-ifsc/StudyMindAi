@@ -4,14 +4,17 @@ import { buildPlan } from "@/lib/core/planner";
 import { review } from "@/lib/core/srs";
 import {
   elapsedMs,
+  completeCycle,
   pauseTimer,
   resumeTimer,
+  restoreTimer,
   sessionMinutes,
   startTimer,
   timerStorageKey,
 } from "@/lib/core/pomodoro";
 import { quizStats, streak, minutesInRange } from "@/lib/core/metrics";
 import { parseBackup } from "@/lib/core/backup";
+import { backupAdditions } from "@/lib/core/backup-additions";
 import { validateFile, validateContent } from "@/lib/core/files";
 import { QUESTIONS, selectPracticeQuestions } from "@/lib/core/questions";
 import type { Task, StudySession } from "@/lib/core/types";
@@ -150,6 +153,27 @@ describe("revisão espaçada", () => {
 });
 
 describe("pomodoro por timestamps", () => {
+  it("descarta estados locais inválidos sem quebrar a tela", () => {
+    for (const raw of [null, "{", "null", "{}", '{"targetMin":-1}'])
+      expect(restoreTimer(raw)).toBeNull();
+    const timer = startTimer(
+      { clientId: "c", label: "x", taskId: null, subjectId: null, targetMin: 25 },
+      0,
+    );
+    expect(restoreTimer(JSON.stringify(timer))).toEqual(timer);
+  });
+  it("encerra na meta ao retornar à aba e permite continuar depois", () => {
+    const timer = startTimer(
+      { clientId: "c", label: "x", taskId: null, subjectId: null, targetMin: 25 },
+      0,
+    );
+    const completed = completeCycle(timer, 120 * 60000);
+    expect(sessionMinutes(completed, 120 * 60000)).toBe(25);
+    expect(completed.runningSince).toBeNull();
+    const resumed = resumeTimer(completed, 120 * 60000);
+    expect(completeCycle(resumed, 125 * 60000)).toBe(resumed);
+    expect(sessionMinutes(resumed, 125 * 60000)).toBe(30);
+  });
   it("não conta o tempo pausado", () => {
     let s = startTimer(
       { clientId: "c", label: "x", taskId: null, subjectId: null, targetMin: 25 },
@@ -228,6 +252,22 @@ describe("backup JSON", () => {
   };
   it("aceita um backup válido", () => {
     expect(parseBackup(JSON.stringify(base)).ok).toBe(true);
+  });
+  it("remapeia referências por tabela quando atividade e disciplina compartilham o ID antigo", () => {
+    const id = "11111111-1111-4111-8111-111111111111";
+    const parsed = parseBackup(
+      JSON.stringify({
+        ...base,
+        subjects: [{ id, name: "Matemática", color: "indigo" }],
+        tasks: [{ ...task(id, MON, 30), subject_id: id }],
+      }),
+    );
+    if (!parsed.ok) throw new Error(parsed.error);
+    let sequence = 0;
+    const additions = backupAdditions(parsed.data, () => `novo-${++sequence}`);
+    expect(additions.tasks?.[0]?.subject_id).toBe(additions.subjects?.[0]?.id);
+    expect(additions.tasks?.[0]?.id).not.toBe(additions.subjects?.[0]?.id);
+    expect(parsed.data.tasks[0]?.subject_id).toBe(id);
   });
   it("rejeita datas impossíveis, IDs duplicados e cartões órfãos", () => {
     const id = "11111111-1111-4111-8111-111111111111";

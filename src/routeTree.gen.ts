@@ -17,6 +17,8 @@ import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as ApiAssistantRouteImport } from './routes/api/assistant'
+import { Route as ApiLocalRouteImport } from './routes/api/local'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as DemoSectionRouteImport } from './routes/demo.$section'
 import { Route as AuthenticatedAppSectionRouteImport } from './routes/_authenticated/app.$section'
 
@@ -59,6 +61,16 @@ const ApiAssistantRoute = ApiAssistantRouteImport.update({
   path: '/api/assistant',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLocalRoute = ApiLocalRouteImport.update({
+  id: '/api/local',
+  path: '/api/local',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoSectionRoute = DemoSectionRouteImport.update({
   id: '/demo/$section',
   path: '/demo/$section',
@@ -78,6 +90,8 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/api/assistant': typeof ApiAssistantRoute
+  '/api/local': typeof ApiLocalRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/demo/$section': typeof DemoSectionRoute
   '/app/$section': typeof AuthenticatedAppSectionRoute
 }
@@ -89,6 +103,8 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/api/assistant': typeof ApiAssistantRoute
+  '/api/local': typeof ApiLocalRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/demo/$section': typeof DemoSectionRoute
   '/app/$section': typeof AuthenticatedAppSectionRoute
 }
@@ -102,6 +118,8 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/api/assistant': typeof ApiAssistantRoute
+  '/api/local': typeof ApiLocalRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/demo/$section': typeof DemoSectionRoute
   '/_authenticated/app/$section': typeof AuthenticatedAppSectionRoute
 }
@@ -115,6 +133,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/onboarding'
     | '/api/assistant'
+    | '/api/local'
+    | '/auth/callback'
     | '/demo/$section'
     | '/app/$section'
   fileRoutesByTo: FileRoutesByTo
@@ -126,6 +146,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/onboarding'
     | '/api/assistant'
+    | '/api/local'
+    | '/auth/callback'
     | '/demo/$section'
     | '/app/$section'
   id:
@@ -138,6 +160,8 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/onboarding'
     | '/api/assistant'
+    | '/api/local'
+    | '/auth/callback'
     | '/demo/$section'
     | '/_authenticated/app/$section'
   fileRoutesById: FileRoutesById
@@ -150,6 +174,8 @@ export interface RootRouteChildren {
   PrivacidadeRoute: typeof PrivacidadeRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiAssistantRoute: typeof ApiAssistantRoute
+  ApiLocalRoute: typeof ApiLocalRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   DemoSectionRoute: typeof DemoSectionRoute
 }
 
@@ -211,6 +237,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAssistantRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/local': {
+      id: '/api/local'
+      path: '/api/local'
+      fullPath: '/api/local'
+      preLoaderRoute: typeof ApiLocalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo/$section': {
       id: '/demo/$section'
       path: '/demo/$section'
@@ -249,6 +289,8 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacidadeRoute: PrivacidadeRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiAssistantRoute: ApiAssistantRoute,
+  ApiLocalRoute: ApiLocalRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   DemoSectionRoute: DemoSectionRoute,
 }
 export const routeTree = rootRouteImport

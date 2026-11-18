@@ -1,8 +1,9 @@
-import { isAuthConfigured } from "@/lib/auth-config";
+import { isAuthConfigured, backendMode } from "@/lib/auth-config";
+import { AuthCard } from "@/components/auth/AuthCard";
 import { BackLink } from "@/components/navigation/BackLink";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,24 +24,49 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 function Reset() {
+  return backendMode() === "local" ? <AuthCard mode="login" initialForgot /> : <CloudReset />;
+}
+function CloudReset() {
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
     if (!isAuthConfigured()) return;
-    if (window.location.hash.includes("type=recovery")) setReady(true);
-    const { data } = supabase.auth.onAuthStateChange((e) => {
+    let active = true;
+    void auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) setMsg("Não foi possível validar o link. Solicite uma nova recuperação.");
+        else setReady(Boolean(data.session));
+      })
+      .catch(() => {
+        if (active) setMsg("Não foi possível validar sua sessão. Tente novamente.");
+      });
+    const { data } = auth.onAuthStateChange((e) => {
       if (e === "PASSWORD_RECOVERY") setReady(true);
     });
-    return () => data.subscription.unsubscribe();
+    return () => {
+      active = false;
+      data.subscription.unsubscribe();
+    };
   }, []);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const password = String(new FormData(e.currentTarget).get("password"));
     if (password.length < 8) return setMsg("Use pelo menos 8 caracteres.");
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) return setMsg(error.message);
-    navigate({ to: "/app/$section", params: { section: "painel" } });
+    setMsg("");
+    setBusy(true);
+    try {
+      const { error } = await auth.updateUser({ password });
+      if (error) throw error;
+      await navigate({ to: "/app/$section", params: { section: "painel" } });
+    } catch (error) {
+      setMsg((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <main className="grid min-h-screen place-items-center plasma-page px-4">
@@ -48,6 +74,11 @@ function Reset() {
         <Logo />
         <BackLink to="/login" label="Voltar ao login" className="mt-4" />
         <h1 className="mt-8 text-3xl font-semibold">Definir nova senha</h1>
+        {msg && (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            {msg}
+          </p>
+        )}
         {!ready ? (
           <p className="mt-4 text-sm text-muted-foreground">
             Abra esta página pelo link enviado ao seu e-mail.
@@ -65,12 +96,7 @@ function Reset() {
                 autoComplete="new-password"
               />
             </div>
-            {msg && (
-              <p role="alert" className="text-sm text-destructive">
-                {msg}
-              </p>
-            )}
-            <Button type="submit" className="w-full rounded-full">
+            <Button type="submit" className="w-full rounded-full" disabled={busy}>
               Salvar senha
             </Button>
           </form>

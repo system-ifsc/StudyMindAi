@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
   elapsedMs,
+  completeCycle,
   pauseTimer,
   resumeTimer,
+  restoreTimer,
   sessionMinutes,
   startTimer,
   timerStorageKey,
@@ -53,24 +55,26 @@ export function Focus() {
       return;
     }
     let restored: TimerState | null = null;
-    const raw = localStorage.getItem(storageKey);
-    if (raw)
-      try {
-        restored = JSON.parse(raw) as TimerState;
-      } catch {
-        /* estado inválido */
-      }
+    try {
+      restored = restoreTimer(localStorage.getItem(storageKey));
+    } catch {
+      // O navegador pode bloquear o armazenamento local.
+    }
     setNow(Date.now());
     setTimer(restored);
     setLoadedKey(storageKey);
   }, [storageKey]);
   useEffect(() => {
     if (!storageKey || loadedKey !== storageKey) return;
-    if (timer) localStorage.setItem(storageKey, JSON.stringify(timer));
-    else localStorage.removeItem(storageKey);
+    try {
+      if (timer) localStorage.setItem(storageKey, JSON.stringify(timer));
+      else localStorage.removeItem(storageKey);
+    } catch {
+      // O cronômetro continua disponível na aba mesmo sem persistência local.
+    }
   }, [timer, storageKey, loadedKey]);
   useEffect(() => {
-    if (!timer?.runningSince) return;
+    if (timer?.runningSince == null) return;
     const i = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(i);
   }, [timer?.runningSince]);
@@ -80,11 +84,11 @@ export function Focus() {
   const mm = String(Math.floor(remaining / 60000)).padStart(2, "0"),
     ss = String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0");
   useEffect(() => {
-    if (timer?.runningSince && remaining === 0) {
-      setTimer(pauseTimer(timer, Date.now()));
+    if (timer && completeCycle(timer, now) !== timer) {
+      setTimer(completeCycle(timer, now));
       toast.success("Ciclo concluído! Registre a sessão ou continue.");
     }
-  }, [remaining, timer]);
+  }, [now, timer]);
 
   function start() {
     const task = tasks.data?.find((t) => t.id === taskId);

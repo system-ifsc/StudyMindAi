@@ -33,3 +33,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Persistent local backend (accounts, private files and SQLite journals)
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

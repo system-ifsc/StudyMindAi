@@ -1,74 +1,89 @@
 # StudyMind AI
 
-Plataforma de organização de estudos em pt-BR: disciplinas, atividades, calendário semanal, planejador automático por prazo, Pomodoro, flashcards com revisão espaçada, metas, gráficos, exercícios comentados, materiais e assistente de IA.
+Organização de estudos em português: disciplinas, atividades, planejamento determinístico, Pomodoro, flashcards, exercícios, materiais e tutor opcional. Aplicativo independente com React 19, TanStack Start, Vite, Tailwind e servidor Node. O backend padrão usa SQLite local; Supabase é opcional. Não exige conta em editor de aplicativos.
 
-## Expansão das ferramentas educacionais
+## Instalar
 
-Leitura de DOCX/PPTX, resumos e guias salvos, anotações manuais, geração de flashcards, questionários/simulados com correção e tutor contextualizado pelo progresso foram integrados às seções existentes. Veja o [comparativo, configuração, limites e etapas pendentes](./docs/studyfetch-comparison.md). Conversas, tentativas e arquivos privados foram integrados nesta entrega. Veja o [estado atual, configuração, arquitetura, API e pendências do roadmap](./docs/roadmap-delivery.md).
+Requer Node 22.13+ e npm. Não precisa de Supabase, Docker ou serviços externos para criar conta e salvar estudos.
 
-## Stack
-- TanStack Start v1 (React 19, Vite 7, SSR) rodando como Worker (Cloudflare/workerd) — substitui o Vinext/App Router e o empacotamento "Sites" da versão original.
-- Lovable Cloud (Postgres + Auth + RLS) — substitui Cloudflare D1/Drizzle e o login "ChatGPT/Sites".
-- Tailwind CSS v4 + shadcn/ui; Recharts; pdf.js (extração real de texto de PDF no navegador).
-- Assistente: Lovable AI Gateway via AI SDK, somente no servidor (`src/lib/ai/assistant.server.ts`, rota `POST /api/assistant`).
-
-## O que mudou em relação ao ZIP original
-| Original | Agora |
-|---|---|
-| Login hospedado ChatGPT (só funcionava no Sites) | Cadastro/login por e-mail e senha + Google, confirmação de e-mail e redefinição de senha |
-| Estado inteiro em um JSON por usuário no D1 | Tabelas normalizadas com RLS por `auth.uid()` (`supabase/migrations` / `drizzle/migrations`) |
-| Timer por `setInterval` | Pomodoro por timestamps, com pausa, sobrevive a recarregar; registro idempotente por `client_id` |
-| 3 questões fixas | 25 questões comentadas em 5 temas, respostas gravadas e resultado agregado por tema |
-| Sem plano automático | Planejador determinístico (algoritmo explícito, **não IA**) |
-| Só TXT | TXT/MD (1 MB) e PDF com texto (10 MB), limite de 200 mil caracteres, leitura e edição |
-| Sem IA | Assistente real no servidor; se a chave não existir, a tela informa e não simula respostas |
-| Exportação JSON | Exportação V1 + importação validada, aditiva e transacional com confirmação |
-| — | Modo demonstração em `/demo/*`, só em memória, separado dos dados reais |
-
-Funções preservadas: disciplinas, atividades (data, duração, prioridade), sessões, indicadores, metas, cartões com revisão, banco de questões (as 3 originais mantidas), materiais, exportação, tema claro/escuro, método 80/20 (no Planejador), onboarding de nome/curso/meta.
-
-## Executar localmente
 ```bash
-bun install          # ou npm install
-cp .env.example .env # preencha com a URL e a chave pública do seu backend
-bun run dev          # http://localhost:8080
-bunx vitest run      # testes
-bunx tsgo -b --noEmit   # checagem de tipos (ou npx tsc --noEmit)
-bun run build
-```
-O histórico do banco está em `drizzle/migrations/`. Alterações de schema e aplicação de migrações devem seguir o fluxo gerenciado pelo Lovable, conforme [AGENTS.md](./AGENTS.md). O assistente exige chave do gateway, chave de serviço e limites explícitos de chamadas (veja `.env.example`); sem configuração, `GET /api/assistant` responde `configured:false` e a tela avisa.
-
-Melhorias recentes:
-- O [`.env.example`](./.env.example) documenta variáveis públicas, privadas, cliente admin e segredos opcionais de rotinas agendadas.
-- O planejador permite testar horizontes de 1 a 28 dias e blocos mínimos configuráveis sem alterar as atividades salvas.
-- Materiais podem ser filtrados por nome ou conteúdo; flashcards podem ser filtrados por disciplina.
-- O assistente salva conversas por disciplina, permite retomá-las e registrar feedback; aplica cotas distribuídas diárias/mensais e limite por minuto.
-- O desempenho exibe a sequência atual de dias estudados.
-- A aplicação inclui manifesto PWA e service worker com cache apenas de arquivos públicos em `/assets/`. Páginas autenticadas e respostas de API não são armazenadas; acesso completo offline ainda não está disponível.
-
-## Estrutura
-```
-src/lib/core/      regras puras e testadas (planner, srs, pomodoro, metrics, backup, files, questions, dates, types)
-src/lib/repo/      contrato Repo + implementação Cloud (real) e memória (demonstração)
-src/lib/ai/        assistente (somente servidor)
-src/hooks/         use-data (react-query + feedback), use-theme (tema persistido)
-src/components/    app/ (shell, UI comum), sections/ (uma tela por seção), auth/, brand/
-src/routes/        /, /login, /cadastro, /reset-password, /privacidade, /onboarding, /app/$section, /demo/$section, /api/assistant
+npm ci
+npm run setup:check
+npm run dev
 ```
 
-## Limitações conhecidas
-- OCR local opcional para até 20 páginas digitalizadas; os idiomas exigem download no primeiro uso e a precisão precisa ser conferida pelo estudante.
-- O Pomodoro depende do navegador (estado guardado no próprio aparelho); não sincroniza entre dispositivos até ser concluído.
-- O planejador permite até 28 dias, mas não reserva pausas nem considera dependências entre atividades.
-- O banco fixo foi preservado. Questionários gerados podem ser salvos e retomados em Exercícios, com enunciados, respostas e avaliações persistentes.
-- O histórico do assistente fica na conta. A IA recebe as últimas 12 mensagens e aceita materiais salvos de até 60 mil caracteres e textos colados de até 15 mil; materiais maiores são recusados sem truncamento silencioso.
-- Importação V1 adiciona dados, remapeia IDs e atualiza o perfil na mesma transação. Ainda não recupera conversas, tentativas completas nem arquivos originais; reimportar cria novas cópias.
-- O app não foi publicado em produção.
+Abra http://localhost:8080/cadastro, crie sua conta, guarde o código de recuperação e conclua o onboarding. O banco é criado automaticamente em `data/studymind.sqlite`. Dados e arquivos persistem após recarregar ou reiniciar o servidor. O modo `/demo/*` continua separado, apenas em memória.
 
-Pendências de banco/infraestrutura: extensão do backup, sincronização das migrações remotas, backup do Storage, staging, monitoramento e sincronização do cronômetro. A solicitação de extensão do backup foi recusada por falta de créditos do workspace Lovable. Consulte o [relatório da entrega](./docs/roadmap-delivery.md).
+## Backend local (padrão)
 
-## Publicação na Vercel
+Na ausência das variáveis do Supabase, o app seleciona SQLite. Para usar o modo local mesmo com variáveis antigas, defina `VITE_BACKEND=local` no `.env` e refaça o build. O arquivo [`.env.example`](./.env.example) já usa esse padrão. Cliente e servidor precisam usar o mesmo modo; não se alterna de backend após uma falha de rede.
 
-Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` nas variáveis de ambiente do projeto Vercel, no ambiente **Production**, usando os valores públicos do backend conectado no Lovable. Não use a chave de serviço no navegador. O arquivo local `.env` não é enviado ao Git e não configura a hospedagem.
+- Cadastro e login com e-mail/senha, sessão em cookie HttpOnly, senha com scrypt e Bearer curto para a API de IA.
+- Recuperação sem e-mail: o código privado exibido no cadastro redefine a senha, invalida as sessões e é substituído por um novo código. Guarde-o; não há envio fictício de e-mails.
+- Perfil, disciplinas, atividades, sessões, cartões, metas, materiais, conversas, simulados e arquivos privados passam pelo Repo e ficam no servidor, separados por usuário.
+- `LOCAL_DATA_DIR` altera a pasta de armazenamento (padrão `./data`). Ela contém dados privados e está fora do Git.
+- Para backup integral local, pare o servidor e copie a pasta de dados inteira para local seguro. O JSON da interface é apenas um backup dos dados básicos de estudo, não das contas ou arquivos originais.
 
-Depois de salvar as variáveis, faça **Redeploy**: o Vite incorpora esses valores durante o build. Sem elas, a página inicial e a demonstração continuam disponíveis, e o login informa a indisponibilidade. Para recursos do servidor, configure também as variáveis descritas em [.env.example](./.env.example) pelo gerenciamento de Secrets do Lovable.
+Para hospedar esse modo, use um servidor Node com disco/volume persistente, HTTPS e uma única instância compartilhando esse banco. Hospedagens com sistema de arquivos temporário ou apenas estático não preservam o SQLite. Não exponha a pasta de dados como diretório público. Se usar proxy reverso, configure `APP_ORIGIN` com a origem HTTPS pública quando a origem interna for diferente.
+
+Google depende de um provedor externo e fica oculto no modo local. Cadastro/login próprios funcionam sem Google.
+
+## Supabase opcional: configurar cadastro e login
+
+1. Defina `VITE_BACKEND=supabase` e crie um projeto no [painel Supabase](https://supabase.com/dashboard).
+2. Copie a URL e a chave **publishable** (ou anon pública) para `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` no arquivo `.env`. Configure `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` com os mesmos valores para o servidor. Nenhuma chave administrativa é necessária para cadastro/login.
+3. Copie a conexão PostgreSQL do painel **Connect** para `DATABASE_URL`. Se sua rede não tiver IPv6, use o pooler de sessão. A senha é a senha do banco, não a chave pública. Execute `npm run db:setup` para instalar tabelas, RLS, criação automática do perfil, Storage privado, backup e cotas de IA.
+4. Em **Authentication**, habilite cadastro e o provedor de e-mail/senha. Em **URL Configuration**, defina a Site URL e autorize `http://localhost:8080/auth/callback` e `http://localhost:8080/reset-password`. Na publicação, autorize as mesmas rotas no seu domínio HTTPS.
+5. Para confirmação e recuperação por e-mail em produção, configure SMTP próprio no Supabase. O envio padrão tem restrições e não substitui um serviço de e-mail de produção. Confira [a documentação de SMTP](https://supabase.com/docs/guides/auth/auth-smtp).
+6. Reinicie `npm run dev` após alterar o ambiente. Em produção, faça novo build após alterar variáveis `VITE_*`.
+
+O cadastro chama Auth diretamente. Se a confirmação estiver habilitada, o usuário recebe um link; a rota `/auth/callback` valida a sessão e leva ao onboarding. Se o backend entregar uma sessão imediatamente, o cadastro abre o onboarding. A recuperação valida a sessão antes de permitir salvar a senha. É possível reenviar a confirmação pela tela de cadastro.
+
+Google é opcional: configure suas credenciais no provedor Google do Supabase, autorize o callback do Supabase no Google Cloud e somente então defina `VITE_GOOGLE_AUTH_ENABLED=true`. O login usa `supabase.auth.signInWithOAuth`, sem intermediário.
+
+`npm run setup:check` verifica presença das variáveis e acessibilidade do Auth sem imprimir valores secretos. Não cria contas nem confirma entrega de e-mails.
+
+## Banco e dados
+
+As migrações PostgreSQL opcionais estão em [supabase/migrations](./supabase/migrations); o schema SQLite fica em [supabase/migrations/sqlite](./supabase/migrations/sqlite). No modo local, o banco é inicializado automaticamente ou por `npm run db:setup`. As instruções a seguir nesta seção sobre transações PostgreSQL aplicam-se ao modo Supabase. `npm run db:setup` aplica tudo em uma transação, registra checksums e pode ser repetido. Para proteger dados, recusa um banco com tabelas StudyMind preexistentes sem esse histórico. Não aplica SQL no backend antigo e não migra usuários automaticamente.
+
+O diretório [drizzle](./drizzle) contém apenas o histórico legado; não é a fonte para uma instalação nova. A transferência de contas existentes exige um plano próprio de exportação/importação de Auth e Storage. O backup JSON V1 importa os dados educacionais básicos e atualiza o perfil, mas não transfere usuários, senhas, conversas, simulados completos nem arquivos binários.
+
+Toda operação da interface passa pelo contrato Repo: SQLite ou Supabase para contas reais e memória para demonstração. As tabelas têm RLS; referências compostas impedem vínculos entre contas. Arquivos ficam no bucket privado `study-materials`. Sessões são idempotentes por `(user_id, client_id)`.
+
+## Desenvolvimento com Supabase local
+
+Também é possível usar Supabase local, com Docker e CLI Supabase atual (v2.108+ ou v3):
+
+```bash
+npx supabase start
+npx supabase status
+```
+
+A CLI aplica as migrações e informa URL/chaves locais; coloque os valores no `.env`. Neste caminho não execute `db:setup`, pois a CLI gerencia seu próprio histórico. O servidor de e-mails de teste fica em http://localhost:54324 e permite validar confirmação e recuperação sem enviar mensagens reais. Veja [o guia oficial](https://supabase.com/docs/guides/auth/testing-auth-flows).
+
+## IA independente e opcional
+
+Escolha um provedor compatível com Chat Completions e configure apenas no servidor:
+
+- `AI_BASE_URL`: endpoint do provedor, normalmente terminado em `/v1`.
+- `AI_MODEL`: identificador de um modelo disponível na sua conta.
+- `AI_API_KEY`: chave do provedor.
+- Somente no modo Supabase: `SUPABASE_SERVICE_ROLE_KEY`, usada pelas cotas no servidor. No modo local, as cotas ficam no SQLite e não precisam de chave administrativa.
+- `AI_DAILY_REQUEST_LIMIT` e `AI_MONTHLY_REQUEST_LIMIT`: inteiros positivos; mensal maior ou igual ao diário. No modo local, os padrões são 20 e 200.
+
+O tutor, a geração e a correção discursiva usam `/api/assistant` com Bearer verificado e cotas distribuídas. Sem essas configurações, o app avisa e não fabrica respostas. Cadastro, planejamento, estudo e banco fixo de exercícios funcionam sem IA. `GET /api/assistant` informa a configuração; não testa saldo ou acesso ao modelo.
+
+## Testar e publicar
+
+```bash
+npm run check
+npm run build
+npm start
+```
+
+O build padrão gera `.output/server/index.mjs`, pronto para servidor Node. O Nitro também permite publicar em outros destinos, como Vercel, conforme [a documentação do TanStack](https://tanstack.com/start/latest/docs/framework/react/guide/hosting). Configure variáveis no provedor escolhido e os redirects de Auth no Supabase. O arquivo `.env` local não configura sua hospedagem. Sirva pelo processo Node ou adaptador de servidor; uma hospedagem apenas estática não executa a API.
+
+## Limites
+
+OCR depende do download inicial dos idiomas e da qualidade do documento. Pomodoro fica no navegador até concluir. A demonstração perde seus dados ao recarregar. O backup V1 tem escopo limitado, detalhado acima. Os testes PostgreSQL usam PGlite com schemas mínimos de Auth/Storage: validam SQL, RLS, relacionamentos, perfil e cotas, mas não substituem testar envio de e-mail e OAuth no backend real.

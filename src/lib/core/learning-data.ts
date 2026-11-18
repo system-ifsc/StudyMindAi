@@ -1,4 +1,4 @@
-/** Contrato aplicado pelo Lovable em 16/11/2026. user_id é imposto pelo Repo. */
+/** Contrato de persistência da aprendizagem. user_id é imposto pelo Repo. */
 export interface Conversation {
   id: string;
   subject_id: string | null;

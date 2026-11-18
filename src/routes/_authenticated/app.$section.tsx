@@ -2,14 +2,14 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { AppShell } from "@/components/app/AppShell";
 import { DataProvider } from "@/hooks/use-data";
-import { createCloudRepo } from "@/lib/repo/cloud";
+import { createRepo } from "@/lib/repo";
 import { findSection } from "@/components/sections/registry";
 
 export const Route = createFileRoute("/_authenticated/app/$section")({
   beforeLoad: async ({ context, params }) => {
     if (!findSection(params.section))
       throw redirect({ to: "/app/$section", params: { section: "painel" } });
-    const profile = await createCloudRepo(context.user.id).getProfile();
+    const profile = await createRepo(context.user.id).getProfile();
     if (!profile.onboarded) throw redirect({ to: "/onboarding" });
   },
   head: ({ params }) => ({
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/app/$section")({
 function AppPage() {
   const { user } = Route.useRouteContext();
   const { section } = Route.useParams();
-  const repo = useMemo(() => createCloudRepo(user.id), [user.id]);
+  const repo = useMemo(() => createRepo(user.id), [user.id]);
   return (
     <DataProvider repo={repo}>
       <AppShell mode="real" section={section} />

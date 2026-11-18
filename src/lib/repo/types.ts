@@ -3,7 +3,7 @@ import type { Backup } from "@/lib/core/backup";
 
 export type NewRow<T extends TableName> = Omit<Tables[T], "id"> & { id?: string };
 
-/** Contrato único usado pela interface. Implementações: Lovable Cloud (dados reais) e memória (modo demonstração). */
+/** Contrato único usado pela interface. Implementações: SQLite local ou Supabase (dados reais) e memória (modo demonstração). */
 export interface Repo {
   mode: "real" | "demo";
   getProfile(): Promise<Profile>;

@@ -5,8 +5,8 @@ import { Assistant } from "@/components/sections/Assistant";
 import { DataProvider } from "@/hooks/use-data";
 import { createMemoryRepo } from "@/lib/repo/memory";
 import { demoSeed } from "@/lib/repo/demo-seed";
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: { auth: { getSession: async () => ({ data: { session: { access_token: "test" } } }) } },
+vi.mock("@/lib/auth/client", () => ({
+  auth: { getSession: async () => ({ data: { session: { access_token: "test" } } }) },
 }));
 afterEach(() => {
   cleanup();

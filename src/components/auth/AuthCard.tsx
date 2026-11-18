@@ -1,10 +1,9 @@
-import { isAuthConfigured, authUnavailableMessage } from "@/lib/auth-config";
+import { isAuthConfigured, authUnavailableMessage, backendMode } from "@/lib/auth-config";
 import { BackLink } from "@/components/navigation/BackLink";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { auth, recoverLocalPassword } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,18 +38,31 @@ function translate(msg: string) {
   if (/password/i.test(msg) && /least|short|weak/i.test(msg))
     return "Senha fraca: use pelo menos 8 caracteres.";
   if (/rate limit/i.test(msg)) return "Muitas tentativas. Aguarde alguns minutos.";
+  if (/fetch|network|connection/i.test(msg))
+    return "Não foi possível conectar. Confira sua conexão e tente novamente.";
   return msg;
 }
 
-export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
+export function AuthCard({
+  mode,
+  initialForgot = false,
+}: {
+  mode: "login" | "cadastro";
+  initialForgot?: boolean;
+}) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
-  const [forgot, setForgot] = useState(false);
+  const [forgot, setForgot] = useState(initialForgot);
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [confirmationEmail, setConfirmationEmail] = useState("");
+  const local = backendMode() === "local";
+  const googleEnabled = !local && import.meta.env["VITE_GOOGLE_AUTH_ENABLED"] === "true";
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (mode === "cadastro" && recoveryCode) return;
     if (!isAuthConfigured()) return setError(authUnavailableMessage);
     const f = new FormData(e.currentTarget);
     const email = String(f.get("email") || "").trim();
@@ -60,7 +72,20 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
     setBusy(true);
     try {
       if (forgot) {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        if (local) {
+          const result = await recoverLocalPassword(
+            email,
+            String(f.get("recovery") || "").trim(),
+            password,
+          );
+          setRecoveryCode(result.recovery_code);
+          setForgot(false);
+          setInfo(
+            "Senha alterada. Guarde seu novo código de recuperação e entre com a nova senha.",
+          );
+          return;
+        }
+        const { error } = await auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
@@ -68,19 +93,27 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
       } else if (mode === "cadastro") {
         if (password.length < 8) throw new Error("Senha fraca: use pelo menos 8 caracteres.");
         const name = String(f.get("name") || "").trim();
-        const { data, error } = await supabase.auth.signUp({
+        if (!name) throw new Error("Informe seu nome.");
+        const { data, error } = await auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/app/painel`, data: { name } },
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback`, data: { name } },
         });
         if (error) throw error;
-        if (data.session) navigate({ to: "/onboarding" });
-        else
+        if (local && "recovery_code" in data && data.recovery_code) {
+          setRecoveryCode(String(data.recovery_code));
           setInfo(
-            "Conta criada! Enviamos um link de confirmação para seu e-mail. Depois de confirmar, faça login.",
+            "Conta criada! Guarde seu código de recuperação em um lugar seguro. Você precisará dele se esquecer sua senha.",
           );
+        } else if (data.session) navigate({ to: "/onboarding" });
+        else {
+          setConfirmationEmail(email);
+          setInfo(
+            "Confira seu e-mail: enviamos um link de confirmação se o cadastro estiver disponível para esse endereço. Se já tiver conta, faça login.",
+          );
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await auth.signInWithPassword({ email, password });
         if (error) throw error;
         navigate({ to: "/app/$section", params: { section: "painel" } });
       }
@@ -91,18 +124,40 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
     }
   }
 
+  async function resendConfirmation() {
+    if (!confirmationEmail || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const { error } = await auth.resend({
+        type: "signup",
+        email: confirmationEmail,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
+      setInfo("Solicitação enviada. Confira sua caixa de entrada e o spam.");
+    } catch (err) {
+      setError(translate((err as Error).message));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function google() {
     if (!isAuthConfigured()) return setError(authUnavailableMessage);
     setError("");
-    const r = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/login",
-    });
-    if (r.error) {
-      setError("Não foi possível entrar com Google. Tente novamente.");
-      return;
+    setBusy(true);
+    try {
+      const { error } = await auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
+    } catch (err) {
+      setError(translate((err as Error).message));
+    } finally {
+      setBusy(false);
     }
-    if (r.redirected) return;
-    navigate({ to: "/app/$section", params: { section: "painel" } });
   }
 
   const title = forgot
@@ -161,7 +216,9 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
           <h1 className="mt-8 text-3xl font-semibold">{title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {forgot
-              ? "Informe seu e-mail para receber o link."
+              ? local
+                ? "Informe seu e-mail, o código recebido no cadastro e uma nova senha."
+                : "Informe seu e-mail para receber o link."
               : mode === "login"
                 ? "Entre para continuar seus estudos."
                 : "Seus dados ficam protegidos e visíveis só para você."}
@@ -173,14 +230,14 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
             </p>
           )}
 
-          {!forgot && (
+          {!forgot && googleEnabled && (
             <>
               <Button
                 type="button"
                 variant="outline"
                 className="mt-6 h-11 w-full gap-2.5 rounded-full"
                 onClick={google}
-                disabled={!isAuthConfigured()}
+                disabled={busy || !isAuthConfigured()}
               >
                 <GoogleG /> Continuar com Google
               </Button>
@@ -203,11 +260,17 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
               <Label htmlFor="email">E-mail</Label>
               <Input id="email" name="email" type="email" autoComplete="email" required />
             </div>
-            {!forgot && (
+            {forgot && local && (
+              <div className="space-y-1.5">
+                <Label htmlFor="recovery">Código de recuperação</Label>
+                <Input id="recovery" name="recovery" autoComplete="off" required maxLength={128} />
+              </div>
+            )}
+            {(!forgot || local) && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Senha</Label>
-                  {mode === "login" && (
+                  <Label htmlFor="password">{forgot ? "Nova senha" : "Senha"}</Label>
+                  {mode === "login" && !forgot && (
                     <button
                       type="button"
                       className="text-xs text-primary hover:underline"
@@ -224,9 +287,9 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
                   id="password"
                   name="password"
                   type="password"
-                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  autoComplete={mode === "login" && !forgot ? "current-password" : "new-password"}
                   required
-                  minLength={mode === "cadastro" ? 8 : undefined}
+                  minLength={mode === "cadastro" || forgot ? 8 : undefined}
                   aria-describedby={mode === "cadastro" ? "pwd-hint" : undefined}
                 />
                 {mode === "cadastro" && (
@@ -249,13 +312,35 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
                 {info}
               </p>
             )}
+            {recoveryCode && (
+              <div className="rounded-lg border p-3 space-y-2">
+                <p className="text-sm font-semibold">Código de recuperação — guarde agora</p>
+                <code className="block break-all select-all text-sm">{recoveryCode}</code>
+                {mode === "cadastro" && (
+                  <Button type="button" onClick={() => navigate({ to: "/onboarding" })}>
+                    Guardei meu código. Continuar
+                  </Button>
+                )}
+              </div>
+            )}
+            {confirmationEmail && !forgot && (
+              <Button type="button" variant="outline" disabled={busy} onClick={resendConfirmation}>
+                Reenviar confirmação
+              </Button>
+            )}
             <Button
               type="submit"
               className="h-11 w-full rounded-full"
-              disabled={busy || !isAuthConfigured()}
+              disabled={busy || !isAuthConfigured() || (mode === "cadastro" && !!recoveryCode)}
             >
               {busy && <Loader2 className="size-4 animate-spin" aria-hidden />}
-              {forgot ? "Enviar link" : mode === "login" ? "Entrar" : "Criar conta"}
+              {forgot
+                ? local
+                  ? "Redefinir senha"
+                  : "Enviar link"
+                : mode === "login"
+                  ? "Entrar"
+                  : "Criar conta"}
             </Button>
           </form>
 

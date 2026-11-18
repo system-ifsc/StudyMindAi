@@ -56,8 +56,35 @@ export function createMemoryRepo(seed: () => Store): Repo {
         );
       }
       s = { ...s, [table]: (s[table] as { id: string }[]).filter((r) => r.id !== id) };
-      if (table === "subjects")
+      if (table === "subjects") {
         s.tasks = s.tasks.map((t) => (t.subject_id === id ? { ...t, subject_id: null } : t));
+        s.study_sessions = s.study_sessions.map((r) =>
+          r.subject_id === id ? { ...r, subject_id: null } : r,
+        );
+        s.flashcards = s.flashcards.map((r) =>
+          r.subject_id === id ? { ...r, subject_id: null } : r,
+        );
+        s.materials = s.materials.map((r) =>
+          r.subject_id === id ? { ...r, subject_id: null } : r,
+        );
+        s.study_conversations = s.study_conversations.map((r) =>
+          r.subject_id === id ? { ...r, subject_id: null } : r,
+        );
+        s.generated_question_sets = s.generated_question_sets.map((r) =>
+          r.subject_id === id ? { ...r, subject_id: null } : r,
+        );
+      }
+      if (table === "tasks") {
+        s.study_sessions = s.study_sessions.map((r) =>
+          r.task_id === id ? { ...r, task_id: null } : r,
+        );
+        s.study_conversations = s.study_conversations.map((r) =>
+          r.task_id === id ? { ...r, task_id: null } : r,
+        );
+        s.generated_question_sets = s.generated_question_sets.map((r) =>
+          r.task_id === id ? { ...r, task_id: null } : r,
+        );
+      }
     },
     async recordSession(row) {
       if (s.study_sessions.some((x) => x.client_id === row.client_id)) return;

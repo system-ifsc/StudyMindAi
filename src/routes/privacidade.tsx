@@ -25,6 +25,11 @@ export const Route = createFileRoute("/privacidade")({
           sua conta consegue ler, criar, alterar ou excluir.
         </p>
         <p>
+          No modo local, contas e arquivos ficam no servidor que executa a aplicação. Ao executar no
+          seu computador, os dados permanecem nele. A sessão usa um cookie privado; a senha é
+          armazenada como hash. Guarde o código de recuperação entregue no cadastro.
+        </p>
+        <p>
           O modo demonstração usa apenas dados fictícios guardados na memória do navegador; nada é
           enviado ao servidor e tudo some ao recarregar.
         </p>
@@ -32,7 +37,10 @@ export const Route = createFileRoute("/privacidade")({
           O assistente envia ao serviço de IA somente a pergunta e, se você escolher, o texto do
           material selecionado. As chaves ficam no servidor.
         </p>
-        <p>Você pode exportar todos os seus dados em JSON a qualquer momento em Configurações.</p>
+        <p>
+          Em Configurações, o backup JSON inclui os dados básicos de estudo. Contas, senhas,
+          conversas, simulados completos e arquivos originais não fazem parte desse arquivo.
+        </p>
       </div>
     </main>
   ),

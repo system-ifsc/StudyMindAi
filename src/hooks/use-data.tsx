@@ -2,7 +2,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Repo, NewRow } from "@/lib/repo/types";
-import type { TableName, Tables, Profile } from "@/lib/core/types";
+import { TABLES, type TableName, type Tables, type Profile } from "@/lib/core/types";
 
 const Ctx = createContext<Repo | null>(null);
 export function DataProvider({ repo, children }: { repo: Repo; children: ReactNode }) {
@@ -59,4 +59,7 @@ export const useUpdate = <T extends TableName>(t: T, success?: string) =>
     success,
   });
 export const useRemove = (t: TableName, extra: string[] = []) =>
-  useSave<string>((r, id) => r.remove(t, id), { invalidate: [t, ...extra], success: "Excluído" });
+  useSave<string>((r, id) => r.remove(t, id), {
+    invalidate: ["subjects", "tasks", "materials"].includes(t) ? TABLES : [t, ...extra],
+    success: "Excluído",
+  });

@@ -5,6 +5,29 @@ import { createCloudRepo } from "@/lib/repo/cloud";
 
 describe("leitura completa do Repo Cloud", () => {
   beforeEach(() => vi.clearAllMocks());
+  it("desvincula dependências antes de excluir uma disciplina, filtrando a conta", async () => {
+    const query = {
+      update: vi.fn().mockReturnThis(),
+      delete: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      then: (resolve: (value: { error: null }) => void) => resolve({ error: null }),
+    };
+    mocks.from.mockReturnValue(query);
+    await createCloudRepo("owner").remove("subjects", "subject");
+    expect(mocks.from.mock.calls.map(([table]) => table)).toEqual([
+      "tasks",
+      "flashcards",
+      "study_sessions",
+      "materials",
+      "study_conversations",
+      "generated_question_sets",
+      "subjects",
+    ]);
+    expect(query.update).toHaveBeenCalledTimes(6);
+    expect(query.eq).toHaveBeenCalledWith("subject_id", "subject");
+    expect(query.eq.mock.calls.filter(([column]) => column === "user_id")).toHaveLength(7);
+    expect(query.delete).toHaveBeenCalledTimes(1);
+  });
   it("pagina além de 5000 registros, sempre filtrando a conta e ordenando IDs", async () => {
     const rows = Array.from({ length: 5101 }, (_, i) => ({ id: String(i) }));
     const query = {

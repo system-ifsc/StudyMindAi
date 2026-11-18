@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { createCloudRepo } from "@/lib/repo/cloud";
+import { createRepo } from "@/lib/repo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
 
 function Onboarding() {
   const { user } = Route.useRouteContext();
-  const repo = useMemo(() => createCloudRepo(user.id), [user.id]);
+  const repo = useMemo(() => createRepo(user.id), [user.id]);
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [course, setCourse] = useState("");

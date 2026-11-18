@@ -1,3 +1,4 @@
+import { isAuthConfigured } from "@/lib/auth-config";
 import { InteractionFeedback } from "@/components/feedback/InteractionFeedback";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -138,6 +139,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   useEffect(() => {
+    if (!isAuthConfigured()) return;
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();

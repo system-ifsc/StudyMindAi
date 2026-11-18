@@ -66,3 +66,9 @@ src/routes/        /, /login, /cadastro, /reset-password, /privacidade, /onboard
 - O app não foi publicado em produção.
 
 Pendências de banco/infraestrutura: extensão do backup, sincronização das migrações remotas, backup do Storage, staging, monitoramento e sincronização do cronômetro. A solicitação de extensão do backup foi recusada por falta de créditos do workspace Lovable. Consulte o [relatório da entrega](./docs/roadmap-delivery.md).
+
+## Publicação na Vercel
+
+Configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` nas variáveis de ambiente do projeto Vercel, no ambiente **Production**, usando os valores públicos do backend conectado no Lovable. Não use a chave de serviço no navegador. O arquivo local `.env` não é enviado ao Git e não configura a hospedagem.
+
+Depois de salvar as variáveis, faça **Redeploy**: o Vite incorpora esses valores durante o build. Sem elas, a página inicial e a demonstração continuam disponíveis, e o login informa a indisponibilidade. Para recursos do servidor, configure também as variáveis descritas em [.env.example](./.env.example) pelo gerenciamento de Secrets do Lovable.

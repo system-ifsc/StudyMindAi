@@ -1,3 +1,4 @@
+import { isAuthConfigured, authUnavailableMessage } from "@/lib/auth-config";
 import { BackLink } from "@/components/navigation/BackLink";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -50,6 +51,7 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!isAuthConfigured()) return setError(authUnavailableMessage);
     const f = new FormData(e.currentTarget);
     const email = String(f.get("email") || "").trim();
     const password = String(f.get("password") || "");
@@ -90,6 +92,7 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
   }
 
   async function google() {
+    if (!isAuthConfigured()) return setError(authUnavailableMessage);
     setError("");
     const r = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin + "/login",
@@ -164,6 +167,12 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
                 : "Seus dados ficam protegidos e visíveis só para você."}
           </p>
 
+          {!isAuthConfigured() && (
+            <p role="status" className="mt-6 rounded-lg bg-muted p-3 text-sm">
+              {authUnavailableMessage}
+            </p>
+          )}
+
           {!forgot && (
             <>
               <Button
@@ -171,6 +180,7 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
                 variant="outline"
                 className="mt-6 h-11 w-full gap-2.5 rounded-full"
                 onClick={google}
+                disabled={!isAuthConfigured()}
               >
                 <GoogleG /> Continuar com Google
               </Button>
@@ -239,7 +249,11 @@ export function AuthCard({ mode }: { mode: "login" | "cadastro" }) {
                 {info}
               </p>
             )}
-            <Button type="submit" className="h-11 w-full rounded-full" disabled={busy}>
+            <Button
+              type="submit"
+              className="h-11 w-full rounded-full"
+              disabled={busy || !isAuthConfigured()}
+            >
               {busy && <Loader2 className="size-4 animate-spin" aria-hidden />}
               {forgot ? "Enviar link" : mode === "login" ? "Entrar" : "Criar conta"}
             </Button>

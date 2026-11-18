@@ -1,3 +1,4 @@
+import { isAuthConfigured } from "@/lib/auth-config";
 import { BackLink } from "@/components/navigation/BackLink";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
@@ -26,6 +27,7 @@ function Reset() {
   const [ready, setReady] = useState(false);
   const [msg, setMsg] = useState("");
   useEffect(() => {
+    if (!isAuthConfigured()) return;
     if (window.location.hash.includes("type=recovery")) setReady(true);
     const { data } = supabase.auth.onAuthStateChange((e) => {
       if (e === "PASSWORD_RECOVERY") setReady(true);

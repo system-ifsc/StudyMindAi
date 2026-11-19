@@ -23,6 +23,8 @@ import {
 import { backupSchema, parseBackup, type Backup } from "@/lib/core/backup";
 import { formatMinutes } from "@/lib/core/dates";
 import type { Profile } from "@/lib/core/types";
+import { CourseSelect } from "@/components/app/CourseSelect";
+import { requireCourse } from "@/lib/core/courses";
 
 export function Settings() {
   const repo = useRepo(),
@@ -41,7 +43,7 @@ export function Settings() {
     (r, x) =>
       r.updateProfile({
         display_name: x.display_name,
-        course: x.course,
+        course: requireCourse(x.course),
         objective: x.objective,
         availability: x.availability,
         weekly_hours: Math.max(1, Math.round(x.availability.reduce((a, b) => a + b, 0) / 60)),
@@ -193,11 +195,10 @@ export function Settings() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="st-course">Curso</Label>
-                <Input
+                <CourseSelect
                   id="st-course"
                   value={p.course}
-                  maxLength={150}
-                  onChange={(e) => setP({ ...p, course: e.target.value })}
+                  onChange={(course) => setP({ ...p, course })}
                 />
               </div>
             </div>

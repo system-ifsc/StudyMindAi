@@ -60,7 +60,7 @@ export function demoSeed(): { profile: Profile } & { [K in keyof Tables]: Tables
     profile: {
       id: "demo",
       display_name: "Estudante Demo",
-      course: "Técnico em Informática para Internet",
+      course: "Informática para Internet",
       objective: "Concluir o módulo 1 com média 8",
       weekly_hours: 8,
       availability: [60, 60, 90, 60, 45, 120, 0],

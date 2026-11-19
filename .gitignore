@@ -39,3 +39,10 @@ data/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+
+# Android build outputs and signing material
+android/.gradle/
+android/**/build/
+android/local.properties
+*.jks
+*.keystore

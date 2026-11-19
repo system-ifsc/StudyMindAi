@@ -26,6 +26,39 @@ import {
 } from "@/lib/core/study-tools";
 import { generationRequestSchema, gradeRequestSchema } from "@/lib/core/assistant";
 import { assistantRequestSchema } from "@/lib/core/assistant";
+import { COURSES, findCourse, requireCourse, questionsForCourse } from "@/lib/core/courses";
+
+describe("catálogo de cursos", () => {
+  it("oferece exercícios específicos para cada curso sem misturar áreas", () => {
+    for (const course of COURSES) {
+      const pool = questionsForCourse(QUESTIONS, course.name);
+      expect(pool.some((question) => question.topic !== "Técnicas de Estudo")).toBe(true);
+      expect(
+        pool.every(
+          (question) =>
+            question.topic === "Técnicas de Estudo" ||
+            course.subjects.some((subject) => subject === question.topic),
+        ),
+      ).toBe(true);
+    }
+    expect(questionsForCourse(QUESTIONS, "Curso inexistente")).toEqual([]);
+  });
+  it("oferece somente os quatro cursos do projeto", () => {
+    expect(COURSES.map((course) => course.name)).toEqual([
+      "Informática para Internet",
+      "Agroecologia",
+      "Biotecnologia",
+      "Mecatrônica",
+    ]);
+    for (const course of COURSES) expect(course.subjects.length).toBeGreaterThan(0);
+  });
+  it("reconhece o nome legado sem permitir cursos fora do catálogo", () => {
+    expect(requireCourse("Técnico em Informática para Internet")).toBe("Informática para Internet");
+    expect(findCourse("Medicina")).toBeUndefined();
+    expect(() => requireCourse("")).toThrow();
+    expect(() => requireCourse("Medicina")).toThrow();
+  });
+});
 
 describe("validação do assistente", () => {
   it("aceita conversa e material dentro dos limites", () => {

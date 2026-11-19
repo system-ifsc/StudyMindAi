@@ -1,0 +1,37 @@
+name: Android APK
+on:
+  workflow_dispatch:
+    inputs:
+      server_url:
+        description: 'Origem HTTPS do backend StudyMind'
+        required: true
+        type: string
+  push:
+    paths: ['android/**', '.github/workflows/android.yml']
+  pull_request:
+    paths: ['android/**', '.github/workflows/android.yml']
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      STUDYMIND_SERVER_URL: ${{ inputs.server_url || vars.STUDYMIND_SERVER_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Check and build APK
+        working-directory: android
+        run: gradle --no-daemon lintDebug assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StudyMind-Android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

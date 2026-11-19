@@ -2,7 +2,17 @@ import { BackLink } from "@/components/navigation/BackLink";
 import { Suspense } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Loading } from "./ui";
-import { LogOut, Moon, Sun, FlaskConical } from "lucide-react";
+import {
+  LogOut,
+  Moon,
+  Sun,
+  FlaskConical,
+  Home,
+  CalendarDays,
+  Timer,
+  Layers,
+  Grid2X2,
+} from "lucide-react";
 import { auth } from "@/lib/auth/client";
 import {
   Sidebar,
@@ -27,6 +37,48 @@ import { useProfile } from "@/hooks/use-data";
 import { SECTIONS, findSection } from "@/components/sections/registry";
 
 type Mode = "real" | "demo";
+
+function MobileNavigation({ mode, current }: { mode: Mode; current: string }) {
+  const { setOpenMobile, openMobile } = useSidebar();
+  const tabs = [
+    { key: "painel", label: "Início", icon: Home },
+    { key: "planejador", label: "Meu plano", icon: CalendarDays },
+    { key: "foco", label: "Foco", icon: Timer },
+    { key: "flashcards", label: "Revisar", icon: Layers },
+  ];
+  const selected = ["atividades", "calendario"].includes(current) ? "planejador" : current;
+  return (
+    <nav aria-label="Navegação principal" className="mobile-dock md:hidden">
+      {tabs.map((tab) => (
+        <Link
+          key={tab.key}
+          to={mode === "demo" ? "/demo/$section" : "/app/$section"}
+          params={{ section: tab.key }}
+          aria-current={selected === tab.key ? "page" : undefined}
+          className="dock-item"
+        >
+          <span className="dock-icon">
+            <tab.icon className="size-5" aria-hidden />
+          </span>
+          <span>{tab.label}</span>
+        </Link>
+      ))}
+      <button
+        type="button"
+        className="dock-item"
+        onClick={() => setOpenMobile(true)}
+        aria-label="Mais opções"
+        aria-expanded={openMobile}
+        data-active={!tabs.some((tab) => tab.key === selected) || undefined}
+      >
+        <span className="dock-icon">
+          <Grid2X2 className="size-5" aria-hidden />
+        </span>
+        <span>Mais</span>
+      </button>
+    </nav>
+  );
+}
 
 function Nav({ mode, current }: { mode: Mode; current: string }) {
   const { setOpenMobile } = useSidebar();
@@ -84,7 +136,7 @@ export function AppShell({ mode, section }: { mode: Mode; section: string }) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-svh w-full min-w-0">
+      <div className="study-app flex min-h-svh w-full min-w-0">
         <Sidebar collapsible="icon" className="border-r-0">
           <SidebarHeader className="p-4 pb-3">
             <Logo to={mode === "demo" ? "/" : "/app/painel"} />
@@ -135,14 +187,15 @@ export function AppShell({ mode, section }: { mode: Mode; section: string }) {
               </Link>
             </div>
           )}
-          <header className="glass-chrome sticky top-0 z-10 flex h-16 items-center gap-2 border-b px-4 shadow-soft backdrop-blur-xl sm:px-6">
+          <header className="app-topbar sticky top-0 z-10 flex h-20 items-center gap-3 px-5 sm:px-6">
             <SidebarTrigger aria-label="Abrir ou recolher menu" />
-            <nav
-              aria-label="Trilha"
-              className="min-w-0 flex-1 truncate text-sm text-muted-foreground"
-            >
-              {mode === "demo" ? "Demonstração" : "Meu espaço"} /{" "}
-              <span className="text-foreground">{sec.label}</span>
+            <nav aria-label="Trilha" className="min-w-0 flex-1 truncate text-sm">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                Seu espaço de estudo
+              </span>
+              <span className="mt-0.5 block text-base font-bold text-foreground">
+                {sec.key === "painel" ? "StudyMind" : sec.label}
+              </span>
             </nav>
             <div className="ml-auto flex items-center gap-1">
               <Button
@@ -153,18 +206,29 @@ export function AppShell({ mode, section }: { mode: Mode; section: string }) {
               >
                 {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
               </Button>
+              <Link
+                to={mode === "demo" ? "/demo/$section" : "/app/$section"}
+                params={{ section: "configuracoes" }}
+                aria-label="Meu perfil"
+                className="profile-avatar"
+              >
+                {name.slice(0, 1).toUpperCase()}
+              </Link>
             </div>
           </header>
-          <div className="mx-auto w-full min-w-0 max-w-7xl flex-1 p-4 sm:p-6 lg:p-10" id="conteudo">
-            <div className="mb-4">
-              <BackLink
-                to={
-                  sec.key === "painel" ? "/" : mode === "demo" ? "/demo/$section" : "/app/$section"
-                }
-                section={sec.key === "painel" ? undefined : "painel"}
-                label={sec.key === "painel" ? "Voltar ao início" : "Voltar ao painel"}
-              />
-            </div>
+          <div
+            className="app-content mx-auto w-full min-w-0 max-w-7xl flex-1 p-5 sm:p-6 lg:p-10"
+            id="conteudo"
+          >
+            {sec.key !== "painel" && (
+              <div className="mb-4">
+                <BackLink
+                  to={mode === "demo" ? "/demo/$section" : "/app/$section"}
+                  section="painel"
+                  label="Voltar ao painel"
+                />
+              </div>
+            )}
             {["planejador", "atividades", "calendario"].includes(sec.key) && (
               <nav aria-label="Planejamento integrado" className="mb-6 flex flex-wrap gap-2">
                 {[
@@ -189,6 +253,7 @@ export function AppShell({ mode, section }: { mode: Mode; section: string }) {
             </Suspense>
           </div>
         </SidebarInset>
+        <MobileNavigation mode={mode} current={sec.key} />
       </div>
     </SidebarProvider>
   );

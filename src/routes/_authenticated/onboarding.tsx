@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Logo } from "@/components/brand/Logo";
 import { AvailabilityEditor } from "@/components/app/AvailabilityEditor";
 import { formatMinutes } from "@/lib/core/dates";
+import { CourseSelect } from "@/components/app/CourseSelect";
+import { requireCourse } from "@/lib/core/courses";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
@@ -69,7 +71,7 @@ function Onboarding() {
       await repo.getProfile();
       await repo.updateProfile({
         display_name: name.trim(),
-        course: course.trim(),
+        course: requireCourse(course),
         objective: objective.trim(),
         availability: avail,
         weekly_hours: Math.max(1, Math.round(total / 60)),
@@ -110,14 +112,7 @@ function Onboarding() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ob-course">Curso</Label>
-              <Input
-                id="ob-course"
-                value={course}
-                onChange={(e) => setCourse(e.target.value)}
-                maxLength={150}
-                placeholder="Ex.: Técnico em Informática"
-                required
-              />
+              <CourseSelect id="ob-course" value={course} onChange={setCourse} />
             </div>
           </div>
           <div className="space-y-1.5">

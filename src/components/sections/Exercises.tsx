@@ -2,15 +2,21 @@ import { StudyTools } from "./StudyTools";
 import { SavedQuizzes } from "./SavedQuizzes";
 import { useMemo, useState } from "react";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
-import { useInsert, useTable } from "@/hooks/use-data";
+import { useInsert, useTable, useProfile } from "@/hooks/use-data";
+import { questionsForCourse, findCourse, COURSES } from "@/lib/core/courses";
 import { NativeSelect, PageHeader, Panel } from "@/components/app/ui";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { QUESTIONS, TOPICS, selectPracticeQuestions, type Question } from "@/lib/core/questions";
+import { QUESTIONS, selectPracticeQuestions, type Question } from "@/lib/core/questions";
 import { quizStats } from "@/lib/core/metrics";
 import { cn } from "@/lib/utils";
 
 export function Exercises() {
+  const profile = useProfile();
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const course = selectedCourse ?? findCourse(profile.data?.course ?? "")?.name ?? COURSES[0].name;
+  const courseQuestions = questionsForCourse(QUESTIONS, course);
+  const topics = [...new Set(courseQuestions.map((question) => question.topic))];
   const answers = useTable("quiz_answers");
   const ins = useInsert("quiz_answers", "");
   const [topic, setTopic] = useState("all");
@@ -20,8 +26,8 @@ export function Exercises() {
     [score, setScore] = useState(0);
   const overall = quizStats(answers.data ?? []);
   const pool = useMemo(
-    () => QUESTIONS.filter((q) => topic === "all" || q.topic === topic),
-    [topic],
+    () => questionsForCourse(QUESTIONS, course).filter((q) => topic === "all" || q.topic === topic),
+    [topic, course],
   );
 
   function start() {
@@ -58,16 +64,31 @@ export function Exercises() {
             </Button>
           ) : undefined
         }
-        description={`Banco fixo com ${QUESTIONS.length} questões comentadas em ${TOPICS.length} temas. Cada resposta é registrada.`}
+        description={`${course}: banco fixo com ${courseQuestions.length} questões comentadas em ${topics.length} temas. Cada resposta é registrada.`}
       />
       {!quiz && (
         <Panel>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="flex-1 space-y-1.5">
+              <Label htmlFor="ex-course">Curso</Label>
+              <NativeSelect
+                id="ex-course"
+                value={course}
+                onChange={(event) => {
+                  setSelectedCourse(event.target.value);
+                  setTopic("all");
+                }}
+              >
+                {COURSES.map((item) => (
+                  <option key={item.name}>{item.name}</option>
+                ))}
+              </NativeSelect>
+            </div>
+            <div className="flex-1 space-y-1.5">
               <Label htmlFor="ex-topic">Tema</Label>
               <NativeSelect id="ex-topic" value={topic} onChange={(e) => setTopic(e.target.value)}>
                 <option value="all">Todos os temas</option>
-                {TOPICS.map((t) => (
+                {topics.map((t) => (
                   <option key={t}>{t}</option>
                 ))}
               </NativeSelect>

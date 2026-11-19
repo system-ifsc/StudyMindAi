@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { requireCourse } from "@/lib/core/courses";
 import type { Profile, TableName, Tables } from "@/lib/core/types";
 import type { Repo } from "./types";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -37,6 +38,7 @@ export function createCloudRepo(userId: string, client: SupabaseClient<Database>
       return data as Profile;
     },
     async updateProfile(patch) {
+      if (patch.course !== undefined) patch = { ...patch, course: requireCourse(patch.course) };
       const { error } = await client
         .from("profiles")
         .update({ ...patch, updated_at: new Date().toISOString() })

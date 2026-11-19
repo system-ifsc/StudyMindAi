@@ -1,4 +1,15 @@
-import { Clock, Flame, CheckCircle2, Layers, ArrowRight, AlertCircle } from "lucide-react";
+import {
+  Clock,
+  Timer,
+  Flame,
+  CheckCircle2,
+  Layers,
+  ArrowRight,
+  AlertCircle,
+  Play,
+  BookOpen,
+  CalendarDays,
+} from "lucide-react";
 import { useProfile, useTable } from "@/hooks/use-data";
 import { Panel, Stat, Loading, ErrorState, Empty, Dot } from "@/components/app/ui";
 import { Button } from "@/components/ui/button";
@@ -62,11 +73,54 @@ export function Overview({ go }: SectionProps) {
             month: "long",
           })}
         </p>
-        <h1 className="mt-1 text-3xl font-semibold sm:text-4xl">
-          Olá{p.display_name ? `, ${p.display_name.split(" ")[0]}` : ""}. Seu aprendizado, em
-          movimento.
+        <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+          Olá{p.display_name ? `, ${p.display_name.split(" ")[0]}` : ""} <span aria-hidden>✦</span>
         </h1>
-        {p.objective && <p className="mt-2 text-muted-foreground">Objetivo: {p.objective}</p>}
+        <p className="mt-2 text-sm text-muted-foreground">
+          {p.objective || "Um passo de cada vez. Seu próximo começa aqui."}
+        </p>
+      </div>
+      <section className="focus-hero" aria-labelledby="focus-heading">
+        <div className="relative z-10 max-w-[75%]">
+          <span className="hero-eyebrow">
+            <span className="size-1.5 rounded-full bg-current" /> SEU MOMENTO DE FOCO
+          </span>
+          <h2 id="focus-heading" className="mt-4 text-2xl font-bold leading-tight sm:text-3xl">
+            Pequenos passos.
+            <br />
+            Grandes conquistas.
+          </h2>
+          <p className="mt-3 max-w-xs text-sm leading-relaxed opacity-75">
+            Reserve um momento para aprender algo novo hoje.
+          </p>
+          <Button onClick={() => go("foco")} className="hero-start mt-5">
+            <Play className="size-4" aria-hidden /> Começar a estudar{" "}
+            <ArrowRight className="size-4" aria-hidden />
+          </Button>
+        </div>
+        <div className="focus-orbit" aria-hidden>
+          <Timer />
+          <span>FOCO</span>
+        </div>
+      </section>
+      <div className="grid grid-cols-3 gap-3" aria-label="Atalhos de estudo">
+        {[
+          { key: "disciplinas", label: "Disciplinas", icon: BookOpen, color: "mint" },
+          { key: "planejador", label: "Meu plano", icon: CalendarDays, color: "lilac" },
+          { key: "flashcards", label: "Flashcards", icon: Layers, color: "peach" },
+        ].map((item) => (
+          <button
+            key={item.key}
+            onClick={() => go(item.key)}
+            className={`study-shortcut ${item.color}`}
+          >
+            <span>
+              <item.icon className="size-5" aria-hidden />
+            </span>
+            {item.label}
+            <ArrowRight className="size-3.5 opacity-40" aria-hidden />
+          </button>
+        ))}
       </div>
       <Panel title="Sua central de aprendizagem">
         <p className="mb-4 text-sm text-muted-foreground">
@@ -86,7 +140,7 @@ export function Overview({ go }: SectionProps) {
           ))}
         </div>
       </Panel>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
           label="Estudo nos últimos 7 dias"
           value={formatMinutes(week)}

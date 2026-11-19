@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Plus, Pencil } from "lucide-react";
-import { useInsert, useRemove, useTable, useUpdate } from "@/hooks/use-data";
+import { useInsert, useRemove, useTable, useUpdate, useProfile } from "@/hooks/use-data";
+import { findCourse } from "@/lib/core/courses";
 import {
   ConfirmDelete,
   Dot,
@@ -26,6 +27,8 @@ import { formatMinutes } from "@/lib/core/dates";
 import type { Subject } from "@/lib/core/types";
 
 export function Subjects() {
+  const profile = useProfile();
+  const course = findCourse(profile.data?.course ?? "");
   const subjects = useTable("subjects"),
     tasks = useTable("tasks"),
     sessions = useTable("study_sessions");
@@ -47,6 +50,32 @@ export function Subjects() {
   const list = (subjects.data ?? []).filter((s) => s.name.toLowerCase().includes(q.toLowerCase()));
   return (
     <div>
+      {course && (
+        <Panel title={course.name}>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Sugestões de disciplinas para seu curso. Adicione somente as que fazem parte dos seus
+            estudos.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {course.subjects.map((name) => (
+              <Button
+                key={name}
+                variant="outline"
+                disabled={
+                  subjects.isLoading ||
+                  !!subjects.error ||
+                  ins.isPending ||
+                  subjects.data?.some((subject) => subject.name === name)
+                }
+                onClick={() => ins.mutate({ name, color: "teal" })}
+              >
+                <Plus className="size-4" aria-hidden />
+                {name}
+              </Button>
+            ))}
+          </div>
+        </Panel>
+      )}
       <PageHeader
         title="Disciplinas"
         description="Organize o seu curso em disciplinas; atividades, cartões e sessões podem ser ligados a elas."

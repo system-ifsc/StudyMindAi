@@ -101,7 +101,7 @@ export function InteractionFeedback() {
       variant="outline"
       size="icon"
       data-sound-toggle
-      className="glass-floating fixed bottom-3 right-3 z-40 h-11 w-11 rounded-full border shadow-card"
+      className="glass-floating fixed bottom-24 right-3 z-40 h-11 w-11 rounded-full border shadow-card md:bottom-3"
       aria-label={enabled ? "Silenciar sons de clique" : "Ativar sons de clique"}
       aria-pressed={enabled}
       title={enabled ? "Silenciar sons de clique" : "Ativar sons de clique"}

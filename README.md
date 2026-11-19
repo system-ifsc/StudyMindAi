@@ -4,6 +4,10 @@ Organização de estudos em português: disciplinas, atividades, planejamento de
 
 ## Instalar
 
+O catálogo oferece somente **Informática para Internet**, **Agroecologia**, **Biotecnologia** e **Mecatrônica**. Escolha o curso no onboarding ou nas configurações; disciplinas sugeridas e exercícios fixos contemplam as quatro áreas. As sugestões não representam uma matriz curricular oficial. A demonstração começa em Informática e permite explorar os demais cursos nas configurações e no filtro de exercícios.
+
+Para a versão Android (APK), veja o [projeto Android](./android/README.md), com configuração do servidor e geração pelo GitHub Actions ou SDK local.
+
 Requer Node 22.13+ e npm. Não precisa de Supabase, Docker ou serviços externos para criar conta e salvar estudos.
 
 ```bash

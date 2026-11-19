@@ -1,13 +1,11 @@
 import { isAuthConfigured, authUnavailableMessage, backendMode } from "@/lib/auth-config";
-import { BackLink } from "@/components/navigation/BackLink";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Brain } from "lucide-react";
 import { auth, recoverLocalPassword } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Logo } from "@/components/brand/Logo";
 
 const GoogleG = () => (
   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24">
@@ -166,36 +164,16 @@ export function AuthCard({
       ? "Bem-vindo de volta"
       : "Crie sua conta";
   return (
-    <div className="plasma-page relative flex min-h-screen items-center px-4 py-10 sm:px-6">
-      <div className="bg-glow pointer-events-none absolute inset-0" aria-hidden />
-      <div className="relative mx-auto grid w-full max-w-5xl items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <aside className="hidden rounded-[2rem] border bg-brand p-10 text-primary-foreground shadow-elevated lg:block">
-          <Logo />
-          <p className="mt-16 text-eyebrow text-primary-foreground/70">Sua rotina, com clareza</p>
-          <h2 className="mt-4 font-display text-4xl font-semibold leading-tight">
-            Menos improviso. Mais progresso.
-          </h2>
-          <p className="mt-4 text-sm leading-6 text-primary-foreground/80">
-            Organize seu tempo, transforme prazos em próximos passos e acompanhe o que realmente
-            está funcionando.
-          </p>
-          <div className="mt-10 space-y-3 text-sm text-primary-foreground/90">
-            {[
-              "Planejamento por prazo",
-              "Foco e revisão no mesmo lugar",
-              "Dados privados por conta",
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-3">
-                <span className="grid size-6 place-items-center rounded-full bg-white/15 text-xs">
-                  ✓
-                </span>
-                {item}
-              </div>
-            ))}
-          </div>
-        </aside>
-        <main className="glass-panel relative w-full rounded-[2rem] border bg-card p-6 shadow-elevated sm:p-8">
-          <Logo />
+    <div className="auth-app relative flex min-h-svh items-center px-5 py-10 sm:px-6">
+      <div className="auth-layout">
+        <header className="auth-brand-banner">
+          <Link to="/" aria-label="StudyMind AI — início" className="auth-brand-link">
+            <Brain aria-hidden />
+            <span>StudyMind AI</span>
+          </Link>
+          <span className="auth-bubble" aria-hidden />
+        </header>
+        <main className="auth-card relative w-full">
           <div className="mt-4">
             {forgot ? (
               <Button
@@ -209,11 +187,10 @@ export function AuthCard({
               >
                 <ArrowLeft aria-hidden /> Voltar ao login
               </Button>
-            ) : (
-              <BackLink />
-            )}
+            ) : null}
           </div>
-          <h1 className="mt-8 text-3xl font-semibold">{title}</h1>
+          <span className="auth-eyebrow">SEU PRÓXIMO CAPÍTULO</span>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight">{title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {forgot
               ? local
@@ -249,7 +226,7 @@ export function AuthCard({
             </>
           )}
 
-          <form onSubmit={submit} className="space-y-4" noValidate={false}>
+          <form onSubmit={submit} className="mt-7 space-y-5" noValidate={false}>
             {mode === "cadastro" && !forgot && (
               <div className="space-y-1.5">
                 <Label htmlFor="name">Nome</Label>

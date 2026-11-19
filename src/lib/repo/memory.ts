@@ -1,5 +1,6 @@
 import type { Profile, TableName, Tables } from "@/lib/core/types";
 import type { Repo } from "./types";
+import { requireCourse } from "@/lib/core/courses";
 
 type Store = { profile: Profile } & { [K in TableName]: Tables[K][] };
 
@@ -15,6 +16,7 @@ export function createMemoryRepo(seed: () => Store): Repo {
       return { ...s.profile };
     },
     async updateProfile(patch) {
+      if (patch.course !== undefined) patch = { ...patch, course: requireCourse(patch.course) };
       s.profile = { ...s.profile, ...patch };
     },
     async list(table) {

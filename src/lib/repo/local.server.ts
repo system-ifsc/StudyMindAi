@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { requireCourse } from "@/lib/core/courses";
 import { localDatabase, transaction } from "@/lib/local/database.server";
 import { LocalError } from "@/lib/local/auth.server";
 import { rowSchemas, profileSchema, rowReferences } from "@/lib/core/local-validation";
@@ -65,6 +66,7 @@ export function createLocalRepo(owner: string): Repo {
       return profile();
     },
     async updateProfile(patch) {
+      if (patch.course !== undefined) patch = { ...patch, course: requireCourse(patch.course) };
       const value = profileSchema.parse({ ...profile(), ...patch, id: owner });
       db.prepare("UPDATE users SET profile=? WHERE id=?").run(JSON.stringify(value), owner);
     },

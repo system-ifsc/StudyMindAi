@@ -1,0 +1,27 @@
+plugins { id 'com.android.application' }
+
+def serverOrigin = providers.gradleProperty('studyMindServerUrl')
+    .orElse(providers.environmentVariable('STUDYMIND_SERVER_URL')).getOrElse('')
+def origin = serverOrigin ? new URI(serverOrigin) : null
+if (origin == null || origin.scheme != 'https' || !origin.host || origin.userInfo
+        || origin.query || origin.fragment || !(origin.path in ['', '/'])) {
+    throw new GradleException('Configure STUDYMIND_SERVER_URL com a origem HTTPS do backend StudyMind, sem caminho ou credenciais.')
+}
+
+android {
+    namespace 'com.studymind.app'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.studymind.app'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+        buildConfigField 'String', 'SERVER_ORIGIN', '"' + serverOrigin.replaceAll('/$', '') + '"'
+    }
+    buildFeatures { buildConfig true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

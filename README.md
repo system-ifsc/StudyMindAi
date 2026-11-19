@@ -100,6 +100,17 @@ npm start
 
 O build padrão gera `.output/server/index.mjs`, pronto para servidor Node. O Nitro também permite publicar em outros destinos, como Vercel, conforme [a documentação do TanStack](https://tanstack.com/start/latest/docs/framework/react/guide/hosting). Configure variáveis no provedor escolhido e os redirects de Auth no Supabase. O arquivo `.env` local não configura sua hospedagem. Sirva pelo processo Node ou adaptador de servidor; uma hospedagem apenas estática não executa a API.
 
+### Publicar na Vercel
+
+O SQLite local exige disco persistente e não funciona como banco de contas nas Functions da Vercel. Uma instalação com `VITE_BACKEND=local` pode renderizar páginas, mas falhar ao cadastrar com “Não foi possível salvar os dados no servidor”. Mudar `LOCAL_DATA_DIR` para `/tmp` não resolve a persistência. O build na Vercel recusa essa configuração.
+
+1. Crie ou use um projeto Supabase. Em Vercel → projeto → Settings → Environment Variables, configure `VITE_BACKEND=supabase`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` para Production (e Preview, se usado). Copie a URL e a chave **pública** do mesmo projeto Supabase. Nunca use uma chave secreta em `VITE_*`.
+2. Em um ambiente administrativo, configure `VITE_BACKEND=supabase` e `DATABASE_URL` no `.env` privado e execute `npm run db:setup`. Isso aplica as migrações versionadas sem apagar dados. A conexão administrativa não precisa ficar na Vercel para cadastro e login.
+3. No Supabase, habilite Email em Authentication → Providers. Configure Site URL como `https://studyminds.vercel.app` e autorize `https://studyminds.vercel.app/auth/callback` e `https://studyminds.vercel.app/reset-password`. Configure SMTP para os e-mails de confirmação e recuperação.
+4. Faça um novo deploy na Vercel: as variáveis `VITE_*` são incorporadas no build. Teste cadastro, confirmação, login e gravação de uma matéria no site e no aplicativo conectado ao mesmo domínio. O endpoint de saúde em modo Supabase informa `external-not-probed`; ele não substitui esses testes.
+
+Para os recursos de IA, configure também as variáveis de servidor descritas acima com o mesmo projeto Supabase. Contas do SQLite existente não são transferidas automaticamente para o Supabase. Para continuar com SQLite, use o servidor com volume persistente descrito na seção de hospedagem independente.
+
 ## Limites
 
 OCR depende do download inicial dos idiomas e da qualidade do documento. Pomodoro fica no navegador até concluir. A demonstração perde seus dados ao recarregar. Backups v1 mantêm seu escopo antigo; novos backups são v2, com limite de 64 MB. Os testes PostgreSQL usam PGlite com schemas mínimos de Auth/Storage: validam SQL, RLS, relacionamentos, perfil e cotas, mas não substituem testar envio de e-mail e OAuth no backend real.

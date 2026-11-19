@@ -173,17 +173,22 @@ export async function handleLocalAuth(
         onboarded: false,
       };
       try {
-        db.prepare(
-          "INSERT INTO users(id,email,name,password,recovery,profile) VALUES(?,?,?,?,?,?)",
-        ).run(id, parsed.email, name, encoded, hash(recovery), JSON.stringify(profile));
+        // Keep account creation and session creation in one transaction. If the
+        // database is briefly locked or the session write fails, we must not
+        // leave an account behind while showing a failed signup to the user.
+        return transaction(() => {
+          db.prepare(
+            "INSERT INTO users(id,email,name,password,recovery,profile) VALUES(?,?,?,?,?,?)",
+          ).run(id, parsed.email, name, encoded, hash(recovery), JSON.stringify(profile));
+          user = db.prepare("SELECT * FROM users WHERE id=?").get(id) as User;
+          const result = newSession(user, request);
+          return { ...result, data: { ...result.data, recovery_code: recovery } };
+        });
       } catch (error) {
         if ((error as Error).message.includes("UNIQUE constraint"))
           throw new LocalError("Este e-mail já tem conta. Faça login.", 409);
         throw error;
       }
-      user = db.prepare("SELECT * FROM users WHERE id=?").get(id) as User;
-      const result = newSession(user, request);
-      return { ...result, data: { ...result.data, recovery_code: recovery } };
     }
     // Always derive a key, including unknown addresses, to reduce timing differences.
     const valid = await matches(

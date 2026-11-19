@@ -39,66 +39,68 @@ function Welcome() {
           </span>
         </header>
         <div className="welcome-scene" aria-hidden="true">
-          <div className="scene-particles">
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
-          <div className="scene-orbit" />
-          <div className="scene-insight">
-            <span>SEU RITMO, SUA EVOLUÇÃO</span>
-            <strong>Todo passo conta.</strong>
-            <div className="scene-bars">
-              <i />
-              <i />
+          <div className="welcome-scene-canvas">
+            <div className="scene-particles">
               <i />
               <i />
               <i />
               <i />
               <i />
             </div>
-            <small>Ilustração de progresso</small>
-          </div>
-          <div className="scene-paper">
-            <span className="scene-paper-icon">
-              <BookOpen />
-            </span>
-            <span className="scene-kicker">UM DIA DE CADA VEZ</span>
-            <strong>
-              Espaço para
-              <br />
-              novas conquistas.
-            </strong>
-            <div className="scene-task">
+            <div className="scene-orbit" />
+            <div className="scene-insight">
+              <span>SEU RITMO, SUA EVOLUÇÃO</span>
+              <strong>Todo passo conta.</strong>
+              <div className="scene-bars">
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+              </div>
+              <small>Ilustração de progresso</small>
+            </div>
+            <div className="scene-paper">
+              <span className="scene-paper-icon">
+                <BookOpen />
+              </span>
+              <span className="scene-kicker">UM DIA DE CADA VEZ</span>
+              <strong>
+                Espaço para
+                <br />
+                novas conquistas.
+              </strong>
+              <div className="scene-task">
+                <span>
+                  <Check />
+                </span>{" "}
+                Encontrar meu foco
+              </div>
+              <div className="scene-task">
+                <span>
+                  <Check />
+                </span>{" "}
+                Aprender algo novo
+              </div>
+              <div className="scene-task scene-pending">
+                <span /> Dar o próximo passo
+              </div>
+              <div className="scene-progress">
+                <span />
+              </div>
+            </div>
+            <div className="scene-focus">
+              <Timer />
               <span>
-                <Check />
-              </span>{" "}
-              Encontrar meu foco
+                Tempo para você<strong>25:00</strong>
+              </span>
             </div>
-            <div className="scene-task">
-              <span>
-                <Check />
-              </span>{" "}
-              Aprender algo novo
-            </div>
-            <div className="scene-task scene-pending">
-              <span /> Dar o próximo passo
-            </div>
-            <div className="scene-progress">
-              <span />
-            </div>
-          </div>
-          <div className="scene-focus">
-            <Timer />
-            <span>
-              Tempo para você<strong>25:00</strong>
+            <span className="scene-spark">
+              <Sparkles />
             </span>
           </div>
-          <span className="scene-spark">
-            <Sparkles />
-          </span>
         </div>
         <section className="welcome-copy" aria-labelledby="welcome-title">
           <p className="welcome-eyebrow">APRENDA. PLANEJE. EVOLUA.</p>

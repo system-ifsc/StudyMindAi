@@ -20,7 +20,9 @@
 .auth-refresh .auth-layout {
   display: grid;
   grid-template-columns: minmax(360px, 0.94fr) minmax(420px, 1.06fr);
-  width: min(1120px, 100%);
+  width: 100%;
+  max-width: 1120px;
+  min-width: 0;
   min-height: 720px;
   overflow: hidden;
   border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
@@ -378,7 +380,7 @@
     transform: translateY(-9px) rotate(2deg);
   }
 }
-@media (max-width: 800px) {
+@media (max-width: 960px) {
   .auth-refresh.auth-app {
     padding: 24px 16px;
   }
@@ -646,7 +648,7 @@
     transform: rotate(-3deg) translateY(-7px);
   }
 }
-@media (max-width: 800px) {
+@media (max-width: 960px) {
   .auth-feature-pills {
     margin-top: 16px;
   }

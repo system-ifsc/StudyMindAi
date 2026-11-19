@@ -23,6 +23,48 @@ test.beforeEach(async ({ page }) => {
   await register(page);
 });
 
+test("a mesma conta compartilha dados entre site e outro dispositivo", async ({
+  page,
+  browser,
+}) => {
+  const session = await page.request.post("/api/local", { data: { op: "auth:session" } });
+  expect(session.ok()).toBeTruthy();
+  const email = (await session.json()).data.session.user.email;
+  const second = await browser.newContext({ baseURL: new URL(page.url()).origin });
+  try {
+    const mobile = await second.newPage();
+    await mobile.goto("/login");
+    await mobile.getByLabel("E-mail", { exact: true }).fill(email);
+    await mobile.getByLabel("Senha", { exact: true }).fill("SenhaE2E-2026!");
+    await mobile.getByRole("button", { name: "Entrar", exact: true }).click();
+    await expect(mobile.getByRole("heading", { name: /Olá, Estudante/ })).toBeVisible();
+    const id = crypto.randomUUID();
+    const saved = await page.request.post("/api/local", {
+      data: {
+        op: "insert",
+        table: "subjects",
+        row: { id, name: "Compartilhada entre dispositivos", color: "indigo" },
+      },
+    });
+    expect(saved.ok()).toBeTruthy();
+    await mobile.goto("/app/disciplinas");
+    await expect(
+      mobile.getByText("Compartilhada entre dispositivos", { exact: true }),
+    ).toBeVisible();
+    const storage = await second.storageState();
+    await second.clearCookies();
+    await mobile.goto("/app/painel");
+    await expect(mobile).toHaveURL(/\/login/);
+    await second.addCookies(storage.cookies);
+    await mobile.goto("/app/disciplinas");
+    await expect(
+      mobile.getByText("Compartilhada entre dispositivos", { exact: true }),
+    ).toBeVisible();
+  } finally {
+    await second.close();
+  }
+});
+
 test("organiza estudos, revisa cartão e restaura backup completo", async ({ page }) => {
   await page.goto("/app/disciplinas");
   await page.getByRole("button", { name: "Nova disciplina", exact: true }).click();

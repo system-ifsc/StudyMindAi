@@ -32,6 +32,18 @@ Para hospedar esse modo, use um servidor Node com disco/volume persistente, HTTP
 
 Google depende de um provedor externo e fica oculto no modo local. Cadastro/login próprios funcionam sem Google.
 
+## Servidor compartilhado pelo site e Android
+
+A instalação com Docker Compose na raiz inclui o servidor Node, SQLite em volume persistente e HTTPS automático com Caddy. Em um servidor com Docker Compose, aponte o DNS do seu domínio para o servidor e libere as portas 80 e 443. Execute, substituindo o domínio:
+
+```bash
+STUDYMIND_DOMAIN=estudos.seudominio.com docker compose up -d --build
+```
+
+Abra `https://estudos.seudominio.com/cadastro`. Gere o APK com `studyMindServerUrl=https://estudos.seudominio.com` ou informe essa mesma origem no workflow Android. Contas e estudos ficam no mesmo servidor; cada dispositivo entra com o mesmo e-mail e senha. O volume `study-data` preserva contas, arquivos e sessões após recriar o contêiner. Não execute `docker compose down -v`, pois esse comando apaga os volumes. Esta instalação cria um banco novo no volume; não importa automaticamente o banco de desenvolvimento existente.
+
+O contêiner não copia o arquivo `.env` nem credenciais locais. A IA é opcional e pode ser configurada por variáveis de ambiente apenas no serviço `app`. Antes de distribuir, valide também o APK em um aparelho Android; os testes mobile do Playwright cobrem o navegador, não o WebView nativo.
+
 ## Supabase opcional: configurar cadastro e login
 
 1. Defina `VITE_BACKEND=supabase` e crie um projeto no [painel Supabase](https://supabase.com/dashboard).

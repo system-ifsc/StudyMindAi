@@ -14,7 +14,7 @@ permissions:
   contents: read
 jobs:
   apk:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       STUDYMIND_SERVER_URL: ${{ inputs.server_url || vars.STUDYMIND_SERVER_URL }}
     steps:
@@ -23,7 +23,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'

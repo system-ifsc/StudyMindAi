@@ -39,7 +39,28 @@ function Welcome() {
           </span>
         </header>
         <div className="welcome-scene" aria-hidden="true">
+          <div className="scene-particles">
+            <i />
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
           <div className="scene-orbit" />
+          <div className="scene-insight">
+            <span>SEU RITMO, SUA EVOLUÇÃO</span>
+            <strong>Todo passo conta.</strong>
+            <div className="scene-bars">
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+            </div>
+            <small>Ilustração de progresso</small>
+          </div>
           <div className="scene-paper">
             <span className="scene-paper-icon">
               <BookOpen />
@@ -90,6 +111,17 @@ function Welcome() {
             Seus estudos, seu ritmo. Um espaço para organizar sua rotina e transformar foco em
             conquistas.
           </p>
+          <div className="entry-benefits">
+            <span>
+              <BookOpen aria-hidden /> Tudo organizado
+            </span>
+            <span>
+              <Timer aria-hidden /> Mais foco
+            </span>
+            <span>
+              <Sparkles aria-hidden /> Novas descobertas
+            </span>
+          </div>
           <div className="welcome-actions">
             <Button asChild className="welcome-primary">
               <Link to="/cadastro">
@@ -101,6 +133,26 @@ function Welcome() {
             </Button>
           </div>
           <p className="welcome-footnote">Um pouco mais perto do seu futuro.</p>
+        </section>
+        <section className="welcome-features" aria-label="Seu espaço de estudo">
+          <article>
+            <span className="feature-number">01</span>
+            <BookOpen aria-hidden />
+            <h2>Organize suas ideias</h2>
+            <p>Disciplinas, materiais e atividades no mesmo lugar.</p>
+          </article>
+          <article>
+            <span className="feature-number">02</span>
+            <Timer aria-hidden />
+            <h2>Encontre seu ritmo</h2>
+            <p>Sessões de foco para dedicar atenção ao que importa.</p>
+          </article>
+          <article>
+            <span className="feature-number">03</span>
+            <Brain aria-hidden />
+            <h2>Aprenda e relembre</h2>
+            <p>Flashcards e revisões para continuar evoluindo.</p>
+          </article>
         </section>
       </div>
     </main>

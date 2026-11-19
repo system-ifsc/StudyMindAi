@@ -166,6 +166,11 @@ export function AuthCard({
       : "Crie sua conta";
   return (
     <div className="auth-app auth-refresh relative min-h-svh">
+      <div className="auth-ambient" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </div>
       <div className="auth-layout">
         <header className="auth-brand-banner">
           <Link to="/" aria-label="StudyMind AI — início" className="auth-brand-link">
@@ -184,6 +189,10 @@ export function AuthCard({
             </p>
           </div>
           <div className="auth-illustration" aria-hidden="true">
+            <div className="auth-mini-badge">
+              <BookOpen />
+              <span>Uma ideia de cada vez.</span>
+            </div>
             <span className="auth-orbit auth-orbit-one" />
             <span className="auth-orbit auth-orbit-two" />
             <div className="auth-study-sheet">
@@ -224,6 +233,17 @@ export function AuthCard({
                 <strong>Mais possibilidades.</strong>
               </span>
             </div>
+          </div>
+          <div className="auth-feature-pills">
+            <span>
+              <BookOpen aria-hidden /> Organize
+            </span>
+            <span>
+              <Brain aria-hidden /> Aprenda
+            </span>
+            <span>
+              <Sparkles aria-hidden /> Evolua
+            </span>
           </div>
           <p className="auth-story-footer">
             <span />

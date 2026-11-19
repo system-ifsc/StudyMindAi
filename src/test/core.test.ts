@@ -1,6 +1,27 @@
 import { buildAdaptivePlan } from "@/lib/core/adaptive-plan";
 import { assistantProviderError } from "@/lib/core/assistant";
+import { authErrorMessage } from "@/lib/core/auth-errors";
 import { describe, expect, it } from "vitest";
+
+describe("erros de autenticação", () => {
+  it("distingue limite de envio de e-mails de limite de solicitações", () => {
+    expect(authErrorMessage({ code: "over_email_send_rate_limit", message: "limit" })).toContain(
+      "serviço de e-mail atingiu o limite",
+    );
+    expect(authErrorMessage(new Error("Email rate limit exceeded"))).toContain(
+      "serviço de e-mail atingiu o limite",
+    );
+    expect(authErrorMessage({ code: "over_request_rate_limit" })).toContain("Muitas tentativas");
+  });
+  it("explica restrição do destinatário e mantém erros de credenciais", () => {
+    expect(authErrorMessage({ code: "email_address_not_authorized" })).toContain(
+      "ainda não está habilitado",
+    );
+    expect(authErrorMessage(new Error("Invalid login credentials"))).toBe(
+      "E-mail ou senha incorretos.",
+    );
+  });
+});
 
 describe("erros do provedor de IA", () => {
   it("distingue saldo esgotado de limite temporário mesmo com HTTP 429", () => {

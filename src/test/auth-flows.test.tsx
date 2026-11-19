@@ -67,7 +67,9 @@ describe("autenticação direta no Supabase", () => {
     mocks.signUp.mockResolvedValueOnce({ data: {}, error: new Error("Email rate limit exceeded") });
     fill("cadastro");
     fireEvent.click(screen.getByRole("button", { name: "Criar conta" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Muitas tentativas");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "serviço de e-mail atingiu o limite",
+    );
     expect(screen.getByRole("button", { name: "Criar conta" })).toBeEnabled();
   });
   it("entra com senha e abre o painel", async () => {

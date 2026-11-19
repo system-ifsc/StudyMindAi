@@ -14,6 +14,7 @@ import {
   LockKeyhole,
 } from "lucide-react";
 import { auth, recoverLocalPassword } from "@/lib/auth/client";
+import { authErrorMessage } from "@/lib/core/auth-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,19 +40,6 @@ const GoogleG = () => (
     />
   </svg>
 );
-
-function translate(msg: string) {
-  if (/invalid login/i.test(msg)) return "E-mail ou senha incorretos.";
-  if (/email not confirmed/i.test(msg))
-    return "Confirme seu e-mail antes de entrar (verifique a caixa de entrada e o spam).";
-  if (/already registered/i.test(msg)) return "Este e-mail já tem conta. Faça login.";
-  if (/password/i.test(msg) && /least|short|weak/i.test(msg))
-    return "Senha fraca: use pelo menos 8 caracteres.";
-  if (/rate limit/i.test(msg)) return "Muitas tentativas. Aguarde alguns minutos.";
-  if (/fetch|network|connection/i.test(msg))
-    return "Não foi possível conectar. Confira sua conexão e tente novamente.";
-  return msg;
-}
 
 export function AuthCard({
   mode,
@@ -129,7 +117,7 @@ export function AuthCard({
         navigate({ to: "/app/$section", params: { section: "painel" } });
       }
     } catch (err) {
-      setError(translate((err as Error).message));
+      setError(authErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -148,7 +136,7 @@ export function AuthCard({
       if (error) throw error;
       setInfo("Solicitação enviada. Confira sua caixa de entrada e o spam.");
     } catch (err) {
-      setError(translate((err as Error).message));
+      setError(authErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -165,7 +153,7 @@ export function AuthCard({
       });
       if (error) throw error;
     } catch (err) {
-      setError(translate((err as Error).message));
+      setError(authErrorMessage(err));
     } finally {
       setBusy(false);
     }

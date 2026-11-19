@@ -1,3 +1,4 @@
+import { availabilityError } from "@/lib/core/profile";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Download, Upload, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
@@ -20,7 +21,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { backupSchema, parseBackup, type Backup } from "@/lib/core/backup";
+import {
+  parseAnyBackup,
+  verifyFullBackup,
+  MAX_BACKUP_BYTES,
+  type AnyBackup,
+} from "@/lib/core/full-backup";
+import { exportFullBackup } from "@/lib/repo/full-backup";
 import { formatMinutes } from "@/lib/core/dates";
 import type { Profile } from "@/lib/core/types";
 import { CourseSelect } from "@/components/app/CourseSelect";
@@ -32,7 +39,7 @@ export function Settings() {
     profile = useProfile(),
     { dark, toggle } = useTheme();
   const [p, setP] = useState<Profile | null>(null);
-  const [pending, setPending] = useState<Backup | null>(null),
+  const [pending, setPending] = useState<AnyBackup | null>(null),
     [importing, setImporting] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   const [exporting, setExporting] = useState(false);
@@ -54,78 +61,8 @@ export function Settings() {
   async function exportJson() {
     setExporting(true);
     try {
-      const [prof, subjects, tasks, sessions, flashcards, goals, materials, quiz_answers] =
-        await Promise.all([
-          repo.getProfile(),
-          repo.list("subjects"),
-          repo.list("tasks"),
-          repo.list("study_sessions"),
-          repo.list("flashcards"),
-          repo.list("goals"),
-          repo.list("materials"),
-          repo.list("quiz_answers"),
-        ]);
-      const pick = <T extends object, K extends keyof T>(o: T, ks: K[]) =>
-        Object.fromEntries(ks.map((k) => [k, o[k]]));
-      const b = {
-        app: "studymind",
-        version: 1,
-        exported_at: new Date().toISOString(),
-        profile: pick(prof, [
-          "display_name",
-          "course",
-          "objective",
-          "weekly_hours",
-          "availability",
-        ]),
-        subjects: subjects.map((x) => pick(x, ["id", "name", "color"])),
-        tasks: tasks.map((x) =>
-          pick(x, [
-            "id",
-            "subject_id",
-            "title",
-            "notes",
-            "due_date",
-            "duration_min",
-            "priority",
-            "done",
-            "completed_at",
-          ]),
-        ),
-        sessions: sessions.map((x) =>
-          pick(x, [
-            "id",
-            "client_id",
-            "subject_id",
-            "task_id",
-            "title",
-            "started_at",
-            "ended_at",
-            "minutes",
-          ]),
-        ),
-        flashcards: flashcards.map((x) => ({
-          ...pick(x, ["id", "subject_id", "front", "back", "due_date", "interval_days", "reps"]),
-          ease: Number(x.ease),
-        })),
-        goals: goals.map((x) => pick(x, ["id", "title", "target_date", "done"])),
-        materials: materials.map((x) => pick(x, ["id", "name", "kind", "content"])),
-        quiz_answers: quiz_answers.map((x) =>
-          pick(x, ["id", "question_id", "topic", "correct", "answered_at"]),
-        ),
-      };
-      const validated = backupSchema.safeParse(b);
-      if (!validated.success)
-        throw new Error(
-          "Não foi possível criar um backup recuperável: " + validated.error.issues[0]?.message,
-        );
-      const blob = new Blob([JSON.stringify(validated.data, null, 2)], {
-        type: "application/json",
-      });
-      if (blob.size > 20_000_000)
-        throw new Error(
-          "O backup ultrapassa o limite de recuperação de 20 MB. Solicite uma exportação administrativa.",
-        );
+      const b = await exportFullBackup(repo);
+      const blob = new Blob([JSON.stringify(b)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = Object.assign(document.createElement("a"), {
         href: url,
@@ -141,19 +78,20 @@ export function Settings() {
     }
   }
   async function pickFile(f: File) {
-    if (f.size > 20_000_000) {
-      toast.error("Arquivo grande demais (máx. 20 MB).");
+    if (f.size > MAX_BACKUP_BYTES) {
+      toast.error("Arquivo grande demais (máx. 64 MB).");
       return;
     }
     try {
-      const r = parseBackup(await f.text());
+      const r = parseAnyBackup(await f.text());
       if (!r.ok) {
         toast.error(r.error);
         return;
       }
+      if (r.data.version === 2) await verifyFullBackup(r.data);
       setPending(r.data);
-    } catch {
-      toast.error("Não foi possível ler o backup. Selecione o arquivo novamente.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível ler o backup.");
     } finally {
       if (file.current) file.current.value = "";
     }
@@ -174,7 +112,11 @@ export function Settings() {
   }
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (p) save.mutate(p);
+    if (p) {
+      const error = availabilityError(p.availability);
+      if (error) toast.error(error);
+      else save.mutate(p);
+    }
   }
 
   return (
@@ -233,10 +175,10 @@ export function Settings() {
       </Panel>
       <Panel title="Backup (JSON)">
         <p className="mb-4 text-sm text-muted-foreground">
-          Exporte disciplinas, atividades, sessões, cartões, metas, textos de materiais e
-          resultados. Importar adiciona os registros à sua conta e atualiza o perfil em uma
-          transação. Os dados atuais são preservados. Reimportar o mesmo arquivo cria novas cópias.
-          Conversas, simulados completos e arquivos originais ainda não fazem parte deste backup v1.
+          O backup completo v2 inclui seus estudos, conversas, simulados e arquivos originais, com
+          verificação de integridade (até 64 MB). Importar adiciona os dados com novos IDs, preserva
+          os registros atuais e atualiza o perfil. Backups v1 continuam aceitos. Contas, senhas e
+          sessões de acesso não são exportadas. Guarde o arquivo em local privado.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={exportJson} disabled={exporting || importing}>
@@ -262,11 +204,11 @@ export function Settings() {
           <AlertDialogHeader>
             <AlertDialogTitle>Adicionar dados do backup?</AlertDialogTitle>
             <AlertDialogDescription>
-              O arquivo é válido e contém {pending?.subjects.length} disciplinas,{" "}
-              {pending?.tasks.length} atividades, {pending?.sessions.length} sessões,{" "}
-              {pending?.flashcards.length} cartões, {pending?.goals.length} metas e{" "}
-              {pending?.materials.length} materiais. Os registros serão adicionados com novos IDs;
-              seu perfil será atualizado. Guarde uma exportação atual antes de continuar.
+              {pending?.version === 2
+                ? `Backup completo: ${pending.records.study_conversations.length} conversas, ${pending.records.generated_question_sets.length} simulados e ${pending.files.length} arquivos originais, além dos dados de estudo.`
+                : "Backup v1: serão recuperados os dados básicos de estudo."}{" "}
+              Os registros serão adicionados com novos IDs; seu perfil será atualizado. Importar o
+              mesmo arquivo novamente cria cópias. Guarde uma exportação atual antes de continuar.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

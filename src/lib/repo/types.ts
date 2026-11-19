@@ -1,5 +1,5 @@
 import type { Profile, TableName, Tables } from "@/lib/core/types";
-import type { Backup } from "@/lib/core/backup";
+import type { AnyBackup } from "@/lib/core/full-backup";
 
 export type NewRow<T extends TableName> = Omit<Tables[T], "id"> & { id?: string };
 
@@ -17,5 +17,5 @@ export interface Repo {
   recordSession(row: NewRow<"study_sessions">): Promise<void>;
   uploadMaterialFile(materialId: string, file: File): Promise<void>;
   downloadMaterialFile(fileId: string): Promise<Blob>;
-  importAll(b: Backup): Promise<void>;
+  importAll(b: AnyBackup): Promise<void>;
 }

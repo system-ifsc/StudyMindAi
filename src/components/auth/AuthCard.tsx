@@ -1,11 +1,23 @@
 import { isAuthConfigured, authUnavailableMessage, backendMode } from "@/lib/auth-config";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, Brain } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  Brain,
+  BookOpen,
+  Check,
+  Sparkles,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+} from "lucide-react";
 import { auth, recoverLocalPassword } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import "./auth.css";
 
 const GoogleG = () => (
   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24">
@@ -55,6 +67,7 @@ export function AuthCard({
   const [forgot, setForgot] = useState(initialForgot);
   const [recoveryCode, setRecoveryCode] = useState("");
   const [confirmationEmail, setConfirmationEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const local = backendMode() === "local";
   const googleEnabled = !local && import.meta.env["VITE_GOOGLE_AUTH_ENABLED"] === "true";
 
@@ -164,17 +177,73 @@ export function AuthCard({
       ? "Bem-vindo de volta"
       : "Crie sua conta";
   return (
-    <div className="auth-app relative flex min-h-svh items-center px-5 py-10 sm:px-6">
+    <div className="auth-app auth-refresh relative min-h-svh">
       <div className="auth-layout">
         <header className="auth-brand-banner">
           <Link to="/" aria-label="StudyMind AI — início" className="auth-brand-link">
             <Brain aria-hidden />
             <span>StudyMind AI</span>
           </Link>
-          <span className="auth-bubble" aria-hidden />
+          <div className="auth-story">
+            <span className="auth-story-kicker">UM ESPAÇO PARA EVOLUIR</span>
+            <h2>
+              Seu próximo passo.
+              <br />
+              <em>Um novo começo.</em>
+            </h2>
+            <p>
+              Organize suas ideias, encontre seu ritmo e transforme cada estudo em uma conquista.
+            </p>
+          </div>
+          <div className="auth-illustration" aria-hidden="true">
+            <span className="auth-orbit auth-orbit-one" />
+            <span className="auth-orbit auth-orbit-two" />
+            <div className="auth-study-sheet">
+              <div className="auth-sheet-heading">
+                <BookOpen />
+                <span>Meu espaço de estudo</span>
+                <Sparkles />
+              </div>
+              <strong>
+                Pequenos passos,
+                <br />
+                grandes descobertas.
+              </strong>
+              <div className="auth-sheet-task">
+                <span>
+                  <Check />
+                </span>
+                Organizar minhas ideias
+              </div>
+              <div className="auth-sheet-task">
+                <span>
+                  <Check />
+                </span>
+                Aprender algo novo
+              </div>
+              <div className="auth-sheet-task auth-sheet-pending">
+                <span />
+                Continuar evoluindo
+              </div>
+              <div className="auth-sheet-rule" />
+              <span className="auth-sheet-caption">NO SEU TEMPO. DO SEU JEITO.</span>
+            </div>
+            <div className="auth-floating-note">
+              <Sparkles />
+              <span>
+                Mais clareza.
+                <br />
+                <strong>Mais possibilidades.</strong>
+              </span>
+            </div>
+          </div>
+          <p className="auth-story-footer">
+            <span />
+            Seu aprendizado começa com você.
+          </p>
         </header>
         <main className="auth-card relative w-full">
-          <div className="mt-4">
+          <div>
             {forgot ? (
               <Button
                 type="button"
@@ -189,7 +258,13 @@ export function AuthCard({
               </Button>
             ) : null}
           </div>
-          <span className="auth-eyebrow">SEU PRÓXIMO CAPÍTULO</span>
+          <span className="auth-eyebrow">
+            {forgot
+              ? "VAMOS TE AJUDAR"
+              : mode === "login"
+                ? "BOM TER VOCÊ POR AQUI"
+                : "SEU PRÓXIMO CAPÍTULO"}
+          </span>
           <h1 className="mt-3 text-3xl font-bold tracking-tight">{title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {forgot
@@ -198,7 +273,7 @@ export function AuthCard({
                 : "Informe seu e-mail para receber o link."
               : mode === "login"
                 ? "Entre para continuar seus estudos."
-                : "Seus dados ficam protegidos e visíveis só para você."}
+                : "Crie seu espaço e comece a construir sua rotina de estudos."}
           </p>
 
           {!isAuthConfigured() && (
@@ -230,12 +305,26 @@ export function AuthCard({
             {mode === "cadastro" && !forgot && (
               <div className="space-y-1.5">
                 <Label htmlFor="name">Nome</Label>
-                <Input id="name" name="name" autoComplete="name" required maxLength={80} />
+                <Input
+                  id="name"
+                  name="name"
+                  autoComplete="name"
+                  placeholder="Como podemos te chamar?"
+                  required
+                  maxLength={80}
+                />
               </div>
             )}
             <div className="space-y-1.5">
               <Label htmlFor="email">E-mail</Label>
-              <Input id="email" name="email" type="email" autoComplete="email" required />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="voce@exemplo.com"
+                required
+              />
             </div>
             {forgot && local && (
               <div className="space-y-1.5">
@@ -260,15 +349,29 @@ export function AuthCard({
                     </button>
                   )}
                 </div>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete={mode === "login" && !forgot ? "current-password" : "new-password"}
-                  required
-                  minLength={mode === "cadastro" || forgot ? 8 : undefined}
-                  aria-describedby={mode === "cadastro" ? "pwd-hint" : undefined}
-                />
+                <div className="auth-password-field">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder={
+                      mode === "cadastro" || forgot ? "Crie uma senha segura" : "Sua senha"
+                    }
+                    autoComplete={mode === "login" && !forgot ? "current-password" : "new-password"}
+                    required
+                    minLength={mode === "cadastro" || forgot ? 8 : undefined}
+                    aria-describedby={mode === "cadastro" ? "pwd-hint" : undefined}
+                  />
+                  <button
+                    type="button"
+                    className="auth-password-toggle"
+                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((visible) => !visible)}
+                  >
+                    {showPassword ? <EyeOff aria-hidden /> : <Eye aria-hidden />}
+                  </button>
+                </div>
                 {mode === "cadastro" && (
                   <p id="pwd-hint" className="text-xs text-muted-foreground">
                     Mínimo de 8 caracteres.
@@ -318,6 +421,7 @@ export function AuthCard({
                 : mode === "login"
                   ? "Entrar"
                   : "Criar conta"}
+              {!busy && <ArrowRight className="auth-submit-arrow size-4" aria-hidden />}
             </Button>
           </form>
 
@@ -342,6 +446,10 @@ export function AuthCard({
               </>
             )}
           </p>
+          <div className="auth-security-note">
+            <LockKeyhole aria-hidden />
+            <span>Seu espaço de estudo, só seu.</span>
+          </div>
           <p className="mt-3 text-center text-xs text-muted-foreground">
             Só quer conhecer?{" "}
             <Link to="/demo/$section" params={{ section: "painel" }} className="underline">

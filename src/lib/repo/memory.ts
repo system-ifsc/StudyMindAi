@@ -1,3 +1,5 @@
+import { verifyFullBackup, fullBackupAdditions, base64ToBytes } from "@/lib/core/full-backup";
+import { TABLES } from "@/lib/core/types";
 import type { Profile, TableName, Tables } from "@/lib/core/types";
 import type { Repo } from "./types";
 import { requireCourse } from "@/lib/core/courses";
@@ -116,6 +118,23 @@ export function createMemoryRepo(seed: () => Store): Repo {
       return file;
     },
     async importAll(b) {
+      if (b.version === 2) {
+        const backup = await verifyFullBackup(b);
+        const additions = fullBackupAdditions(backup, "demo", () => crypto.randomUUID());
+        const next = { ...s, profile: { ...s.profile, ...backup.profile, onboarded: true } };
+        for (const table of TABLES) (next[table] as unknown[]) = [...s[table], ...additions[table]];
+        for (let i = 0; i < backup.records.material_files.length; i++) {
+          const original = backup.records.material_files[i]!;
+          const restored = additions.material_files[i]!;
+          const file = backup.files.find((f) => f.id === original.id)!;
+          files.set(
+            restored.id,
+            new Blob([base64ToBytes(file.base64)], { type: restored.mime_type }),
+          );
+        }
+        s = next;
+        return;
+      }
       const ids = new Map<string, string>();
       for (const rows of [
         b.subjects,

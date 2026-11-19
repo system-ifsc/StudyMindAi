@@ -8,3 +8,6 @@ bun.lock
 routeTree.gen.ts
 src/routeTree.gen.ts
 src/integrations
+
+test-results
+playwright-report

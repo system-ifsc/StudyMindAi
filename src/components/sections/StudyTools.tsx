@@ -1,3 +1,4 @@
+import { MarkdownContent, CopyText } from "@/components/app/MarkdownContent";
 import { useRef, useState } from "react";
 import { useSave, useTable } from "@/hooks/use-data";
 import { useStudyAI } from "@/hooks/use-study-ai";
@@ -249,9 +250,10 @@ export function StudyTools({
             {result.type === "text" && (
               <>
                 <h3 className="font-semibold">{result.title}</h3>
-                <div className="max-h-96 overflow-auto whitespace-pre-wrap text-sm">
-                  {result.content}
+                <div className="max-h-96 overflow-auto">
+                  <MarkdownContent content={result.content} />
                 </div>
+                <CopyText text={result.content} />
                 <Button
                   variant="outline"
                   onClick={() => {

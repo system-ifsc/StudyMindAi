@@ -1,3 +1,4 @@
+import { verifyFullBackup, fullBackupAdditions, base64ToBytes } from "@/lib/core/full-backup";
 import { randomUUID } from "node:crypto";
 import { requireCourse } from "@/lib/core/courses";
 import { localDatabase, transaction } from "@/lib/local/database.server";
@@ -165,6 +166,32 @@ export function createLocalRepo(owner: string): Repo {
       return new Blob([new Uint8Array(file.bytes)], { type: row["mime_type"] as string });
     },
     async importAll(raw) {
+      if (raw.version === 2) {
+        const backup = await verifyFullBackup(raw);
+        transaction(() => {
+          const additions = fullBackupAdditions(backup, owner, randomUUID);
+          for (const table of TABLES)
+            for (const row of additions[table]) write(table, row as unknown as Row, true);
+          for (let index = 0; index < backup.records.material_files.length; index++) {
+            const original = backup.records.material_files[index]!;
+            const restored = additions.material_files[index]!;
+            const file = backup.files.find((f) => f.id === original.id)!;
+            db.prepare("INSERT INTO files(owner,id,bytes) VALUES(?,?,?)").run(
+              owner,
+              restored.id,
+              Buffer.from(base64ToBytes(file.base64)),
+            );
+          }
+          const p = profileSchema.parse({
+            ...profile(),
+            ...backup.profile,
+            id: owner,
+            onboarded: true,
+          });
+          db.prepare("UPDATE users SET profile=? WHERE id=?").run(JSON.stringify(p), owner);
+        });
+        return;
+      }
       const backup = backupSchema.parse(raw);
       transaction(() => {
         const additions = backupAdditions(backup, randomUUID);

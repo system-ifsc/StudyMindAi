@@ -1,6 +1,20 @@
 import { z } from "zod";
 import { studyActionSchema, studyQuestionSchema } from "./study-tools";
 
+/** Erros do provedor nunca devem expor respostas brutas ou credenciais. */
+export function assistantProviderError(status: number, code?: string) {
+  if (status === 402 || code === "insufficient_quota" || code === "credit_balance_exhausted")
+    return "Os créditos de API da IA acabaram. Adicione créditos na conta do provedor para continuar.";
+  if (status === 401)
+    return "A chave de API da IA é inválida ou foi revogada. Atualize a configuração do servidor.";
+  if (status === 403) return "O acesso ao modelo de IA foi negado para este projeto.";
+  if (status === 404)
+    return "O modelo de IA configurado não está disponível. Verifique o modelo no servidor.";
+  if (status === 429)
+    return "O provedor atingiu o limite de solicitações. Aguarde um pouco e tente de novo.";
+  return "O assistente está indisponível no momento.";
+}
+
 export const tutorModeSchema = z.enum(["teacher", "evaluator", "review"]);
 export const explanationLevelSchema = z.enum(["simple", "standard", "advanced"]);
 export type TutorMode = z.infer<typeof tutorModeSchema>;

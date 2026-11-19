@@ -1,3 +1,4 @@
+import { verifyFullBackup, fullBackupAdditions, base64ToBytes } from "@/lib/core/full-backup";
 import { supabase } from "@/integrations/supabase/client";
 import { requireCourse } from "@/lib/core/courses";
 import type { Profile, TableName, Tables } from "@/lib/core/types";
@@ -197,6 +198,39 @@ export function createCloudRepo(userId: string, client: SupabaseClient<Database>
       return data;
     },
     async importAll(b) {
+      if (b.version === 2) {
+        const backup = await verifyFullBackup(b);
+        const records = fullBackupAdditions(backup, userId, () => crypto.randomUUID());
+        const bucket = client.storage.from("study-materials");
+        const uploaded: string[] = [];
+        try {
+          for (let i = 0; i < backup.records.material_files.length; i++) {
+            const original = backup.records.material_files[i]!;
+            const restored = records.material_files[i]!;
+            const file = backup.files.find((f) => f.id === original.id)!;
+            const result = await bucket.upload(restored.object_path, base64ToBytes(file.base64), {
+              upsert: false,
+              contentType: "application/octet-stream",
+            });
+            fail(result.error, "restaurar o arquivo privado");
+            uploaded.push(restored.object_path);
+          }
+          // Nova RPC versionada: as linhas e o perfil são inseridos na mesma transação.
+          const result = await client.rpc(
+            "import_full_user_data" as never,
+            { payload: { ...backup, records, files: [] } } as never,
+          );
+          fail(result.error, "restaurar o backup completo");
+        } catch (error) {
+          // Se a resposta da RPC se perder, não apagar objetos já referenciados por uma transação confirmada.
+          const persisted = records.material_files.length
+            ? await this.get("material_files", records.material_files[0]!.id).catch(() => undefined)
+            : null;
+          if (persisted === null && uploaded.length) await bucket.remove(uploaded);
+          throw error;
+        }
+        return;
+      }
       const { error } = await client.rpc("import_user_data", {
         payload: b,
       });

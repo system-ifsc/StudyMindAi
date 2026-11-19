@@ -1,7 +1,7 @@
 import type { QuizAnswer, StudySession, Subject, Task } from "./types";
 import { buildPlan } from "./planner";
 import { quizStats } from "./metrics";
-import { addDays } from "./dates";
+import { addDays, toISODate } from "./dates";
 
 /** Evidência por disciplina: associação explícita pelo nome do tópico, sem inferir domínio. */
 export function adaptiveTasks(
@@ -31,7 +31,7 @@ export function adaptiveTasks(
       const correct = evidence.reduce((sum, t) => sum + t.correct, 0);
       const accuracy = total >= 3 ? Math.round((correct / total) * 100) : null;
       const studied = sessions
-        .filter((s) => s.task_id === task.id && s.started_at.slice(0, 10) <= start)
+        .filter((s) => s.task_id === task.id && toISODate(new Date(s.started_at)) <= start)
         .reduce((sum, s) => sum + Math.max(0, s.minutes), 0);
       const remaining = Math.max(0, task.duration_min - studied);
       const score = task.priority * 100 + (accuracy === null ? 0 : 100 - accuracy);
@@ -68,15 +68,15 @@ export function buildAdaptivePlan(
 ) {
   const ranked = adaptiveTasks(tasks, subjects, answers, sessions, start);
   const focus = ranked.slice(0, Math.ceil(ranked.length * 0.2));
-  const focusIds = new Set(focus.map((r) => r.task.id));
-  const prepared = ranked.map((row) => ({
-    ...row.task,
-    priority: (focusIds.has(row.task.id)
-      ? 3
-      : row.accuracy !== null && row.accuracy < 70
-        ? 2
-        : 1) as Task["priority"],
-  }));
-  const plan = buildPlan(prepared, availability, start, horizon, minBlock, true);
+  const rank = new Map(ranked.map((row, index) => [row.task.id, index]));
+  const plan = buildPlan(
+    ranked.map((row) => row.task),
+    availability,
+    start,
+    horizon,
+    minBlock,
+    true,
+    rank,
+  );
   return { ...plan, focus, evidence: ranked, end: addDays(start, horizon - 1) };
 }

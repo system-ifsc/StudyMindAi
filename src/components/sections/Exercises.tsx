@@ -2,7 +2,7 @@ import { StudyTools } from "./StudyTools";
 import { SavedQuizzes } from "./SavedQuizzes";
 import { useMemo, useState } from "react";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
-import { useInsert, useTable, useProfile } from "@/hooks/use-data";
+import { useSave, useTable, useProfile } from "@/hooks/use-data";
 import { questionsForCourse, findCourse, COURSES } from "@/lib/core/courses";
 import { NativeSelect, PageHeader, Panel } from "@/components/app/ui";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,23 @@ export function Exercises() {
   const courseQuestions = questionsForCourse(QUESTIONS, course);
   const topics = [...new Set(courseQuestions.map((question) => question.topic))];
   const answers = useTable("quiz_answers");
-  const ins = useInsert("quiz_answers", "");
+  const [pendingAnswer, setPendingAnswer] = useState<import("@/lib/core/types").QuizAnswer | null>(
+    null,
+  );
+  const ins = useSave<import("@/lib/core/types").QuizAnswer>(
+    async (repo, row) => {
+      if (!(await repo.get("quiz_answers", row.id))) await repo.insert("quiz_answers", row);
+    },
+    { invalidate: ["quiz_answers"] },
+  );
+  function persistAnswer(row: import("@/lib/core/types").QuizAnswer) {
+    ins.mutate(row, {
+      onSuccess: () => {
+        if (row.correct) setScore((s) => s + 1);
+        setPendingAnswer(null);
+      },
+    });
+  }
   const [topic, setTopic] = useState("all");
   const [quiz, setQuiz] = useState<Question[] | null>(null);
   const [idx, setIdx] = useState(0),
@@ -42,13 +58,15 @@ export function Exercises() {
     if (!q) return;
     setPicked(i);
     const correct = i === q.correct;
-    if (correct) setScore((s) => s + 1);
-    ins.mutate({
+    const row = {
+      id: crypto.randomUUID(),
       question_id: q.id,
       topic: q.topic,
       correct,
       answered_at: new Date().toISOString(),
-    });
+    };
+    setPendingAnswer(row);
+    persistAnswer(row);
   }
   const q = quiz?.[idx];
   const finished = quiz && idx >= quiz.length;
@@ -59,7 +77,7 @@ export function Exercises() {
         title="Exercícios"
         actions={
           quiz ? (
-            <Button variant="outline" onClick={() => setQuiz(null)}>
+            <Button variant="outline" disabled={!!pendingAnswer} onClick={() => setQuiz(null)}>
               <ArrowLeft aria-hidden /> Voltar aos temas
             </Button>
           ) : undefined
@@ -161,8 +179,23 @@ export function Exercises() {
               <strong>{picked === q.correct ? "Correto!" : "Não foi dessa vez."}</strong> {q.why}
             </div>
           )}
+          {pendingAnswer && (
+            <div role="status" className="mt-4 space-y-2 text-sm">
+              <p>
+                {ins.isPending
+                  ? "Salvando resposta…"
+                  : "A resposta ainda não foi salva. Tente novamente para continuar."}
+              </p>
+              {ins.isError && (
+                <Button variant="outline" onClick={() => persistAnswer(pendingAnswer)}>
+                  Tentar salvar resposta
+                </Button>
+              )}
+            </div>
+          )}
           {picked !== null && (
             <Button
+              disabled={!!pendingAnswer}
               className="mt-4"
               onClick={() => {
                 setIdx(idx + 1);

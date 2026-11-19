@@ -26,7 +26,7 @@ Na ausência das variáveis do Supabase, o app seleciona SQLite. Para usar o mod
 - Recuperação sem e-mail: o código privado exibido no cadastro redefine a senha, invalida as sessões e é substituído por um novo código. Guarde-o; não há envio fictício de e-mails.
 - Perfil, disciplinas, atividades, sessões, cartões, metas, materiais, conversas, simulados e arquivos privados passam pelo Repo e ficam no servidor, separados por usuário.
 - `LOCAL_DATA_DIR` altera a pasta de armazenamento (padrão `./data`). Ela contém dados privados e está fora do Git.
-- Para backup integral local, pare o servidor e copie a pasta de dados inteira para local seguro. O JSON da interface é apenas um backup dos dados básicos de estudo, não das contas ou arquivos originais.
+- Para backup integral local, pare o servidor e copie a pasta de dados inteira para local seguro. O JSON v2 da interface inclui todos os estudos, conversas, simulados e arquivos originais, mas não contas/senhas. O snapshot administrativo inclui o backend local inteiro; veja [operação e recuperação](./docs/operacao-e-recuperacao.md).
 
 Para hospedar esse modo, use um servidor Node com disco/volume persistente, HTTPS e uma única instância compartilhando esse banco. Hospedagens com sistema de arquivos temporário ou apenas estático não preservam o SQLite. Não exponha a pasta de dados como diretório público. Se usar proxy reverso, configure `APP_ORIGIN` com a origem HTTPS pública quando a origem interna for diferente.
 
@@ -51,7 +51,7 @@ Google é opcional: configure suas credenciais no provedor Google do Supabase, a
 
 As migrações PostgreSQL opcionais estão em [supabase/migrations](./supabase/migrations); o schema SQLite fica em [supabase/migrations/sqlite](./supabase/migrations/sqlite). No modo local, o banco é inicializado automaticamente ou por `npm run db:setup`. As instruções a seguir nesta seção sobre transações PostgreSQL aplicam-se ao modo Supabase. `npm run db:setup` aplica tudo em uma transação, registra checksums e pode ser repetido. Para proteger dados, recusa um banco com tabelas StudyMind preexistentes sem esse histórico. Não aplica SQL no backend antigo e não migra usuários automaticamente.
 
-O diretório [drizzle](./drizzle) contém apenas o histórico legado; não é a fonte para uma instalação nova. A transferência de contas existentes exige um plano próprio de exportação/importação de Auth e Storage. O backup JSON V1 importa os dados educacionais básicos e atualiza o perfil, mas não transfere usuários, senhas, conversas, simulados completos nem arquivos binários.
+O diretório [drizzle](./drizzle) contém apenas o histórico legado; não é a fonte para uma instalação nova. A transferência de contas existentes exige um plano próprio de exportação/importação de Auth e Storage. O backup JSON v2 recupera todos os dados de estudo e arquivos originais; v1 continua aceito. Nenhum JSON da interface transfere usuários ou senhas. A importação é aditiva e preserva referências com novos IDs. Veja [operação e recuperação](./docs/operacao-e-recuperacao.md).
 
 Toda operação da interface passa pelo contrato Repo: SQLite ou Supabase para contas reais e memória para demonstração. As tabelas têm RLS; referências compostas impedem vínculos entre contas. Arquivos ficam no bucket privado `study-materials`. Sessões são idempotentes por `(user_id, client_id)`.
 
@@ -90,4 +90,8 @@ O build padrão gera `.output/server/index.mjs`, pronto para servidor Node. O Ni
 
 ## Limites
 
-OCR depende do download inicial dos idiomas e da qualidade do documento. Pomodoro fica no navegador até concluir. A demonstração perde seus dados ao recarregar. O backup V1 tem escopo limitado, detalhado acima. Os testes PostgreSQL usam PGlite com schemas mínimos de Auth/Storage: validam SQL, RLS, relacionamentos, perfil e cotas, mas não substituem testar envio de e-mail e OAuth no backend real.
+OCR depende do download inicial dos idiomas e da qualidade do documento. Pomodoro fica no navegador até concluir. A demonstração perde seus dados ao recarregar. Backups v1 mantêm seu escopo antigo; novos backups são v2, com limite de 64 MB. Os testes PostgreSQL usam PGlite com schemas mínimos de Auth/Storage: validam SQL, RLS, relacionamentos, perfil e cotas, mas não substituem testar envio de e-mail e OAuth no backend real.
+
+## Confiabilidade e operação
+
+Há testes E2E de desktop/celular no CI, Markdown seguro e cópia de respostas, backup v2, snapshots consistentes do SQLite, saúde em `/api/health` e métricas autenticadas em `/api/monitoring`. Consulte [o guia de operação e recuperação](./docs/operacao-e-recuperacao.md) para executar os testes, aplicar a migração opcional do Supabase e ensaiar a restauração sem sobrescrever dados.

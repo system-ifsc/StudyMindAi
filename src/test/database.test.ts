@@ -1,3 +1,5 @@
+import { fullBackupFixture } from "./fixtures/full-backup";
+import { fullBackupAdditions } from "@/lib/core/full-backup";
 // @vitest-environment node
 import { PGlite } from "@electric-sql/pglite";
 import { readFile, readdir } from "node:fs/promises";
@@ -170,4 +172,45 @@ describe("migrações PostgreSQL independentes", () => {
       }),
     ).rejects.toThrow(/usage limit exceeded/i);
   });
+});
+
+it("restaura backup v2 por RPC com RLS, perfil e referências em transação", async () => {
+  const backup = await fullBackupFixture();
+  const records = fullBackupAdditions(backup, a, () => crypto.randomUUID());
+  await asUser(a, (tx) =>
+    tx.query("INSERT INTO storage.objects(bucket_id,name) VALUES('study-materials',$1)", [
+      records.material_files[0]!.object_path,
+    ]),
+  );
+  const payload = { ...backup, records, files: [] };
+  await asUser(a, (tx) =>
+    tx.query("SELECT import_full_user_data($1::jsonb)", [JSON.stringify(payload)]),
+  );
+  const messages = await asUser(a, (tx) =>
+    tx.query("SELECT * FROM study_messages WHERE id=$1", [records.study_messages[0]!.id]),
+  );
+  expect(messages.rows).toHaveLength(1);
+  expect(
+    (
+      await asUser(b, (tx) =>
+        tx.query("SELECT * FROM study_messages WHERE id=$1", [records.study_messages[0]!.id]),
+      )
+    ).rows,
+  ).toHaveLength(0);
+  const broken = fullBackupAdditions(backup, a, () => crypto.randomUUID());
+  broken.tasks[0]!.subject_id = crypto.randomUUID();
+  await expect(
+    asUser(a, (tx) =>
+      tx.query("SELECT import_full_user_data($1::jsonb)", [
+        JSON.stringify({ ...backup, records: broken, files: [] }),
+      ]),
+    ),
+  ).rejects.toThrow();
+  expect(
+    (
+      await asUser(a, (tx) =>
+        tx.query("SELECT * FROM subjects WHERE id=$1", [broken.subjects[0]!.id]),
+      )
+    ).rows,
+  ).toHaveLength(0);
 });

@@ -45,6 +45,10 @@ it("retoma conversa e feedback por Repo depois de desmontar a tela", async () =>
   await waitFor(async () => expect(await repo.list("study_message_feedback")).toHaveLength(1));
   view.unmount();
   render(tree());
+  const contextToggle = screen.getByRole("button", { name: "Contexto do estudo" });
+  expect(contextToggle).toHaveAttribute("aria-expanded", "false");
+  fireEvent.click(contextToggle);
+  expect(contextToggle).toHaveAttribute("aria-expanded", "true");
   await screen.findByRole("option", { name: "Explique SQL" });
   const conversations = await repo.list("study_conversations");
   fireEvent.change(screen.getByLabelText("Histórico salvo"), {
@@ -53,4 +57,32 @@ it("retoma conversa e feedback por Repo depois de desmontar a tela", async () =>
   await screen.findByText("Uma explicação real de teste.");
   expect(screen.getByRole("button", { name: "Útil" })).toHaveAttribute("aria-pressed", "true");
   expect(await repo.list("study_messages")).toHaveLength(2);
-});
+  fireEvent.change(screen.getByLabelText("Como estudar"), { target: { value: "review" } });
+  await waitFor(async () =>
+    expect((await repo.list("study_conversations"))[0]!.mode).toBe("review"),
+  );
+  fireEvent.change(screen.getByLabelText("Nível de explicação"), { target: { value: "advanced" } });
+  await waitFor(async () =>
+    expect((await repo.list("study_conversations"))[0]!.level).toBe("advanced"),
+  );
+  const original = (await repo.list("materials"))[0];
+  if (original) {
+    fireEvent.change(screen.getByLabelText("Material de referência"), {
+      target: { value: original.id },
+    });
+    await waitFor(async () =>
+      expect((await repo.list("study_conversations"))[0]!.material_id).toBe(original.id),
+    );
+  }
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Nova conversa" })).not.toBeDisabled(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Nova conversa" }));
+  expect(screen.getByLabelText("Histórico salvo")).toHaveValue("");
+  fireEvent.change(screen.getByLabelText("Histórico salvo"), {
+    target: { value: conversations[0]!.id },
+  });
+  expect(screen.getByLabelText("Como estudar")).toHaveValue("review");
+  expect(screen.getByLabelText("Nível de explicação")).toHaveValue("advanced");
+  if (original) expect(screen.getByLabelText("Material de referência")).toHaveValue(original.id);
+}, 15000);

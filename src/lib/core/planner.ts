@@ -27,12 +27,14 @@ export function buildPlan(
   horizonDays = 14,
   minBlock = 15,
   rescheduleOverdue = false,
+  rank?: ReadonlyMap<string, number>,
 ): PlanResult {
   const pending = tasks
     .filter((t) => !t.done)
     .sort(
       (a, b) =>
         a.due_date.localeCompare(b.due_date) ||
+        (rank?.get(a.id) ?? 0) - (rank?.get(b.id) ?? 0) ||
         b.priority - a.priority ||
         a.title.localeCompare(b.title) ||
         a.id.localeCompare(b.id),

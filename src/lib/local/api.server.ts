@@ -1,3 +1,4 @@
+import { MAX_BACKUP_BYTES } from "@/lib/core/full-backup";
 import { z } from "zod";
 import { TABLES, type TableName } from "@/lib/core/types";
 import { createLocalRepo } from "@/lib/repo/local.server";
@@ -18,7 +19,7 @@ async function limitedBody(request: Request) {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.length;
-      if (size > 21000000) {
+      if (size > MAX_BACKUP_BYTES + 1000000) {
         await reader.cancel();
         throw new LocalError("Requisição grande demais.", 413);
       }

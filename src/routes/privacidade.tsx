@@ -34,12 +34,15 @@ export const Route = createFileRoute("/privacidade")({
           enviado ao servidor e tudo some ao recarregar.
         </p>
         <p>
-          O assistente envia ao serviço de IA somente a pergunta e, se você escolher, o texto do
-          material selecionado. As chaves ficam no servidor.
+          O assistente envia ao serviço de IA a pergunta e até 12 mensagens recentes da conversa. Se
+          você escolher, inclui o texto do material e informações de progresso. As chaves ficam no
+          servidor. O monitoramento registra falhas e latência sem registrar suas perguntas,
+          respostas, e-mail ou credenciais.
         </p>
         <p>
-          Em Configurações, o backup JSON inclui os dados básicos de estudo. Contas, senhas,
-          conversas, simulados completos e arquivos originais não fazem parte desse arquivo.
+          Em Configurações, o backup JSON v2 inclui seus dados de estudo, conversas, simulados e
+          arquivos originais. Contas, senhas e sessões de acesso não fazem parte desse arquivo.
+          Guarde o backup em um local privado.
         </p>
       </div>
     </main>

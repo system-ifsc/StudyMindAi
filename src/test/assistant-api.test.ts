@@ -53,6 +53,22 @@ describe("API autenticada de estudos", () => {
     mocks.reserve.mockResolvedValue(vi.fn().mockResolvedValue(undefined));
   });
   afterEach(() => vi.unstubAllEnvs());
+  it("explica saldo esgotado retornado pelo provedor durante a geração", async () => {
+    mocks.stream.mockImplementationOnce((options) => {
+      options.onError({
+        error: {
+          statusCode: 429,
+          data: { error: { code: "credit_balance_exhausted" } },
+        },
+      });
+      return { text: Promise.resolve("") };
+    });
+    const response = await handleAssistant(
+      request({ action: "generate", tool: "summary", material_id: id }),
+    );
+    expect(response.status).toBe(429);
+    expect((await response.json()).error).toContain("créditos de API");
+  });
   it("recusa cota distribuída esgotada antes de chamar o modelo", async () => {
     mocks.reserve.mockRejectedValueOnce(new Error("USAGE_LIMIT"));
     expect(

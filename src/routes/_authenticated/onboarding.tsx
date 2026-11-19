@@ -1,3 +1,4 @@
+import { availabilityError } from "@/lib/core/profile";
 import { BackLink } from "@/components/navigation/BackLink";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -61,7 +62,8 @@ function Onboarding() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (total < 30) toast.error("Informe pelo menos 30 minutos por semana.");
+    const error = availabilityError(avail);
+    if (error) toast.error(error);
     else await save();
   }
   async function save() {

@@ -2,7 +2,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, type ModelMessage } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import { aiProviderConfig } from "./config.server";
-import { aiRequestSchema, tutorInstructions } from "@/lib/core/assistant";
+import { aiRequestSchema, assistantProviderError, tutorInstructions } from "@/lib/core/assistant";
 import {
   gradingSchema,
   parseStudyOutput,
@@ -200,7 +200,7 @@ export async function handleAssistant(request: Request) {
       maxOutputTokens: body.action === "generate" ? 14000 : body.action === "grade" ? 2000 : 4000,
       messages:
         mat || progress ? [{ role: "user", content: mat + progress }, ...messages] : messages,
-      abortSignal: request.signal,
+      abortSignal: AbortSignal.any([request.signal, AbortSignal.timeout(60000)]),
       onError: ({ error }: { error: unknown }) => {
         failure = error;
       },
@@ -246,15 +246,12 @@ export async function handleAssistant(request: Request) {
       sources: material ? [{ name: material.name, id: body.material_id ?? null }] : [],
     });
   } catch (e) {
-    const status = (e as { statusCode?: number }).statusCode ?? 500;
-    const msg =
-      status === 402
-        ? "Os créditos de IA do projeto acabaram. O responsável precisa adicionar créditos."
-        : status === 429
-          ? "Muitas perguntas seguidas. Aguarde um pouco e tente de novo."
-          : status === 403
-            ? "O acesso ao modelo de IA foi negado para este projeto."
-            : "O assistente está indisponível no momento.";
+    const error = e as {
+      statusCode?: number;
+      data?: { error?: { code?: string; type?: string } };
+    };
+    const status = error.statusCode ?? 500;
+    const msg = assistantProviderError(status, error.data?.error?.code ?? error.data?.error?.type);
     console.error("assistant error", status);
     return json({ error: msg }, status >= 400 && status < 600 ? status : 500);
   } finally {

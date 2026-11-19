@@ -1,5 +1,19 @@
 import { buildAdaptivePlan } from "@/lib/core/adaptive-plan";
+import { assistantProviderError } from "@/lib/core/assistant";
 import { describe, expect, it } from "vitest";
+
+describe("erros do provedor de IA", () => {
+  it("distingue saldo esgotado de limite temporário mesmo com HTTP 429", () => {
+    expect(assistantProviderError(429, "credit_balance_exhausted")).toContain("créditos");
+    expect(assistantProviderError(429, "insufficient_quota")).toContain("créditos");
+    expect(assistantProviderError(429, "rate_limit_exceeded")).toContain("Aguarde");
+  });
+  it("explica chave inválida e modelo indisponível sem expor o erro bruto", () => {
+    expect(assistantProviderError(401)).toContain("chave de API");
+    expect(assistantProviderError(404)).toContain("modelo");
+    expect(assistantProviderError(500)).toBe("O assistente está indisponível no momento.");
+  });
+});
 import { buildPlan } from "@/lib/core/planner";
 import { review } from "@/lib/core/srs";
 import {
@@ -582,4 +596,61 @@ describe("plano adaptativo", () => {
       ).evidence.every((r) => r.accuracy === null),
     ).toBe(true);
   });
+});
+
+import { availabilityError } from "@/lib/core/profile";
+import { toISODate } from "@/lib/core/dates";
+describe("regressões da avaliação completa", () => {
+  it("mantém média antes da baixa fora do grupo de foco", () => {
+    const rows = [
+      { ...task("a", MON, 30), title: "Z alta", priority: 3 as const },
+      { ...task("b", MON, 30), title: "Z média", priority: 2 as const },
+      { ...task("c", MON, 30), title: "A baixa", priority: 1 as const },
+    ];
+    const result = buildAdaptivePlan(rows, [120, 120, 120, 120, 120, 120, 120], MON, [], [], []);
+    expect(result.blocks.map((b) => b.taskId)).toEqual(["a", "b", "c"]);
+    expect(
+      buildAdaptivePlan([...rows].reverse(), [120, 120, 120, 120, 120, 120, 120], MON, [], [], []),
+    ).toEqual(result);
+  });
+  it("desconta sessão no dia local inclusive perto da meia-noite", () => {
+    const timestamp = new Date(2026, 10, 19, 22).toISOString();
+    const day = toISODate(new Date(timestamp));
+    const row = { ...task("night", day, 30) };
+    const session: StudySession = {
+      id: "s",
+      client_id: "s",
+      task_id: row.id,
+      subject_id: null,
+      title: "Noite",
+      started_at: timestamp,
+      ended_at: new Date(new Date(timestamp).getTime() + 1800000).toISOString(),
+      minutes: 30,
+    };
+    expect(
+      buildAdaptivePlan([row], [60, 60, 60, 60, 60, 60, 60], day, [], [], [session]).blocks,
+    ).toEqual([]);
+  });
+  it("valida o total da disponibilidade antes de enviar ao servidor", () => {
+    expect(availabilityError([960, 960, 960, 960, 960, 960, 960])).toContain("100 horas");
+    expect(availabilityError([960, 960, 960, 960, 960, 960, 240])).toBeNull();
+    expect(availabilityError([0, 0, 0, 0, 0, 0, 0])).toContain("30 minutos");
+  });
+});
+
+import { fullBackupFixture } from "./fixtures/full-backup";
+import { fullBackupSchema, fullBackupAdditions } from "@/lib/core/full-backup";
+it("valida referências do backup completo e remapeia relações sem alterar a origem", async () => {
+  const fixture = await fullBackupFixture();
+  const before = structuredClone(fixture);
+  const rows = fullBackupAdditions(fixture, "restored-owner", () => crypto.randomUUID());
+  expect(rows.study_messages[0]!.conversation_id).toBe(rows.study_conversations[0]!.id);
+  expect(rows.material_files[0]!.object_path).toBe(`restored-owner/${rows.material_files[0]!.id}`);
+  expect(fixture).toEqual(before);
+  const invalid = structuredClone(fixture);
+  invalid.records.study_messages[0]!.conversation_id = crypto.randomUUID();
+  expect(fullBackupSchema.safeParse(invalid).success).toBe(false);
+  const missingFile = structuredClone(fixture);
+  missingFile.files = [];
+  expect(fullBackupSchema.safeParse(missingFile).success).toBe(false);
 });

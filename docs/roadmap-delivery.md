@@ -17,4 +17,4 @@ O modo local cria o banco automaticamente, com recuperação por código. Supaba
 
 ## Pendências de produto
 
-Backup integral de conversas, simulados e binários; sincronização do timer entre dispositivos; operação offline completa; monitoramento e restauração de desastre. Nenhum desses recursos é simulado pela interface.
+Backup v2 de conversas, simulados e binários, monitoramento local e ensaio automatizado de restauração foram implementados; veja [operação e recuperação](./operacao-e-recuperacao.md). Continuam como evolução: sincronização do timer entre dispositivos, operação offline completa e integração de alertas externos.

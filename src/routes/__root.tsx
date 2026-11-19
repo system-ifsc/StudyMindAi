@@ -1,3 +1,4 @@
+import { useMonitoring, reportClientError } from "@/hooks/use-monitoring";
 import { isAuthConfigured } from "@/lib/auth-config";
 import { InteractionFeedback } from "@/components/feedback/InteractionFeedback";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -40,7 +41,9 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
-  console.error(error);
+  useEffect(() => {
+    void reportClientError();
+  }, [error]);
   const router = useRouter();
 
   return (
@@ -132,6 +135,7 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
+  useMonitoring();
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   useEffect(() => {

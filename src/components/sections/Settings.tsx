@@ -1,4 +1,4 @@
-import { useTutorial } from "@/components/app/WelcomeTutorial";
+import { useTutorial } from "@/hooks/use-tutorial";
 import { availabilityError } from "@/lib/core/profile";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Download, Upload, Moon, Sun } from "lucide-react";

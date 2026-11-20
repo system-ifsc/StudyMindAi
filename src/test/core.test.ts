@@ -730,3 +730,42 @@ describe("elegibilidade do tutorial", () => {
     );
   });
 });
+
+describe("posicionamento do tutorial", () => {
+  it("centraliza as boas-vindas sem deslocar o cartão para fora da tela", async () => {
+    const { tutorialLayout } = await import("@/lib/core/tutorial");
+    const layout = tutorialLayout({ width: 390, height: 640 }, 309, null);
+    expect(layout.left).toBe(16);
+    expect(layout.top).toBe(165.5);
+    expect(layout.width).toBe(358);
+  });
+  it("mantém o cartão na tela e fora dos alvos em celular, paisagem e desktop", async () => {
+    const { tutorialLayout } = await import("@/lib/core/tutorial");
+    for (const viewport of [
+      { width: 320, height: 568 },
+      { width: 390, height: 640 },
+      { width: 667, height: 375 },
+      { width: 1440, height: 900 },
+    ]) {
+      for (const target of [
+        { left: 16, top: 32, width: 44, height: 44 },
+        { left: 16, top: viewport.height - 76, width: 56, height: 44 },
+        { left: 16, top: viewport.height / 2, width: 200, height: 44 },
+      ]) {
+        const layout = tutorialLayout(viewport, 340, target);
+        const height = Math.min(340, layout.maxHeight);
+        expect(layout.left).toBeGreaterThanOrEqual(16);
+        expect(layout.top).toBeGreaterThanOrEqual(16);
+        expect(layout.left + layout.width).toBeLessThanOrEqual(viewport.width - 16);
+        expect(layout.top + height).toBeLessThanOrEqual(viewport.height - 16);
+        expect(layout.maxHeight).toBeGreaterThan(0);
+        expect(
+          layout.left >= target.left + target.width ||
+            layout.left + layout.width <= target.left ||
+            layout.top >= target.top + target.height ||
+            layout.top + height <= target.top,
+        ).toBe(true);
+      }
+    }
+  });
+});

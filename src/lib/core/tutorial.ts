@@ -95,3 +95,66 @@ export const TUTORIAL_STEPS = [
       "Clique no seu perfil para ajustar sua disponibilidade, aparência e backups. Em Configurações → Tutorial de boas-vindas, você pode refazer este passeio a qualquer momento.",
   },
 ] as const;
+
+export type TutorialRect = { top: number; left: number; width: number; height: number };
+
+/** Posiciona o cartão dentro da tela, preservando espaço para o alvo e a seta. */
+export function tutorialLayout(
+  viewport: { width: number; height: number },
+  contentHeight: number,
+  target: TutorialRect | null,
+) {
+  const margin = 16;
+  const gap = 24;
+  const width = Math.max(0, Math.min(448, viewport.width - margin * 2));
+  const fullHeight = Math.max(0, viewport.height - margin * 2);
+  const height = Math.min(contentHeight, fullHeight);
+  const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max));
+  const center = {
+    left: (viewport.width - width) / 2,
+    top: (viewport.height - height) / 2,
+    width,
+    maxHeight: fullHeight,
+    side: "center" as const,
+  };
+  if (!target) return center;
+  const right = target.left + target.width;
+  const bottom = target.top + target.height;
+  const alignY = clamp(
+    target.top + target.height / 2 - height / 2,
+    margin,
+    viewport.height - margin - height,
+  );
+  if (viewport.width - right - gap - margin >= width)
+    return { left: right + gap, top: alignY, width, maxHeight: fullHeight, side: "right" as const };
+  if (target.left - gap - margin >= width)
+    return {
+      left: target.left - gap - width,
+      top: alignY,
+      width,
+      maxHeight: fullHeight,
+      side: "left" as const,
+    };
+  const above = Math.max(0, target.top - gap - margin);
+  const below = Math.max(0, viewport.height - bottom - gap - margin);
+  const left = clamp(
+    target.left + target.width / 2 - width / 2,
+    margin,
+    viewport.width - margin - width,
+  );
+  if (below >= height || (above < height && below >= above))
+    return {
+      left,
+      top: bottom + gap,
+      width,
+      maxHeight: Math.min(fullHeight, below),
+      side: "below" as const,
+    };
+  return {
+    left,
+    top: Math.max(margin, target.top - gap - Math.min(height, above)),
+    width,
+    maxHeight: Math.min(fullHeight, above),
+    side: "above" as const,
+  };
+}

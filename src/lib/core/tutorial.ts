@@ -21,7 +21,7 @@ export const TUTORIAL_STEPS = [
     target: "disciplinas",
     title: "Organize suas disciplinas",
     description:
-      "No celular, o menu Mais já estará aberto: toque em Disciplinas. No computador, use o menu lateral para cadastrar as matérias que estuda. Elas ajudam a organizar suas atividades, materiais e sessões por assunto.",
+      "Acesse Disciplinas no menu Mais para cadastrar as matérias que estuda. Elas ajudam a organizar suas atividades, materiais e sessões por assunto.",
   },
   {
     target: "planejador",
@@ -33,7 +33,7 @@ export const TUTORIAL_STEPS = [
     target: "atividades",
     title: "Acompanhe suas atividades",
     description:
-      "Dentro de Planejamento (Meu plano no celular), clique em Atividades para cadastrar tarefas, definir prazos e prioridades e marcar o que já concluiu.",
+      "Dentro de Planejamento, clique em Atividades para cadastrar tarefas, definir prazos e prioridades e marcar o que já concluiu.",
   },
   {
     target: "calendario",
@@ -56,37 +56,37 @@ export const TUTORIAL_STEPS = [
     target: "exercicios",
     title: "Pratique com exercícios",
     description:
-      "No celular, procure Exercícios no menu Mais, que ficará aberto durante este passo. No computador, use o menu lateral para responder questões, conferir o resultado e identificar o que precisa revisar.",
+      "Acesse Exercícios no menu Mais para responder questões, conferir o resultado e identificar o que precisa revisar.",
   },
   {
     target: "materiais",
     title: "Guarde seus materiais",
     description:
-      "No celular, procure Materiais no menu Mais, que ficará aberto durante este passo. No computador, use o menu lateral para adicionar e consultar seus materiais de estudo. Organize os arquivos por disciplina para encontrá-los com facilidade.",
+      "Acesse Materiais no menu Mais para adicionar e consultar seus materiais de estudo. Organize os arquivos por disciplina para encontrá-los com facilidade.",
   },
   {
     target: "assistente",
     title: "Conheça o Assistente IA",
     description:
-      "No celular, o Assistente IA está dentro de Mais, que ficará aberto durante este passo. No computador, use o menu lateral. Ele ajuda com seus estudos quando o provedor de IA está configurado; caso contrário, você verá um aviso.",
+      "Acesse Assistente IA no menu Mais. Ele ajuda com seus estudos quando o provedor de IA está configurado; caso contrário, você verá um aviso.",
   },
   {
     target: "feedback",
     title: "Envie seu feedback",
     description:
-      "No celular, abra Feedback pelo menu Mais, que ficará aberto durante este passo. No computador, use o menu lateral para enviar sugestões, relatar problemas ou contar o que pode melhorar na plataforma.",
+      "Acesse Feedback no menu Mais para enviar sugestões, relatar problemas ou contar o que pode melhorar na plataforma.",
   },
   {
     target: "metas",
     title: "Defina suas metas",
     description:
-      "No celular, abra Metas pelo menu Mais, que ficará aberto durante este passo. No computador, use o menu lateral para acompanhar sua meta semanal e cadastrar objetivos pessoais de estudo.",
+      "Acesse Metas no menu Mais para acompanhar sua meta semanal e cadastrar objetivos pessoais de estudo.",
   },
   {
     target: "desempenho",
     title: "Acompanhe seu desempenho",
     description:
-      "No celular, abra Desempenho pelo menu Mais, que ficará aberto durante este passo. No computador, use o menu lateral para consultar seu tempo de estudo, sessões por disciplina e resultados dos exercícios.",
+      "Acesse Desempenho no menu Mais para consultar seu tempo de estudo, sessões por disciplina e resultados dos exercícios.",
   },
   {
     target: "configuracoes",

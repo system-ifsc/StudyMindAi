@@ -141,12 +141,6 @@ function Welcome() {
               <Link to="/login">Já tenho uma conta</Link>
             </Button>
           </div>
-          <p className="welcome-footnote">
-            <Link to="/demo/$section" params={{ section: "painel" }}>
-              Experimentar sem cadastro <ArrowRight className="size-3.5" aria-hidden />
-            </Link>
-            <span>Demonstração com dados fictícios.</span>
-          </p>
         </section>
         <section className="welcome-features" aria-label="Seu espaço de estudo">
           <article>

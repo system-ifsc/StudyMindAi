@@ -126,9 +126,10 @@ function Nav({ mode, current }: { mode: Mode; current: string }) {
   );
 }
 
-export function AppShell({ mode, section }: { mode: Mode; section: string }) {
+function AppShellContent({ mode, section }: { mode: Mode; section: string }) {
   const navigate = useNavigate();
   const { dark, toggle } = useTheme();
+  const { setOpenMobile } = useSidebar();
   const profile = useProfile();
   const sec = findSection(section) ?? SECTIONS[0]!;
   const go = (key: string) =>
@@ -139,12 +140,19 @@ export function AppShell({ mode, section }: { mode: Mode; section: string }) {
   const name = profile.data?.display_name || "Estudante";
 
   return (
-    <SidebarProvider>
-      <TutorialProvider mode={mode} section={section} revealSection={go}>
+    <TutorialProvider
+        mode={mode}
+        section={section}
+        revealSection={go}
+        setMobileMenu={setOpenMobile}
+      >
         <div className="study-app flex min-h-svh w-full min-w-0">
           <Sidebar collapsible="icon" className="border-r-0">
             <SidebarHeader className="p-4 pb-3">
               <Logo to={mode === "demo" ? "/" : "/app/painel"} />
+              <p className="mt-4 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/60 md:hidden">
+                Mais recursos
+              </p>
             </SidebarHeader>
             <SidebarContent>
               <Nav mode={mode} current={sec.key} />
@@ -263,6 +271,13 @@ export function AppShell({ mode, section }: { mode: Mode; section: string }) {
           <MobileNavigation mode={mode} current={sec.key} />
         </div>
       </TutorialProvider>
+  );
+}
+
+export function AppShell({ mode, section }: { mode: Mode; section: string }) {
+  return (
+    <SidebarProvider>
+      <AppShellContent mode={mode} section={section} />
     </SidebarProvider>
   );
 }

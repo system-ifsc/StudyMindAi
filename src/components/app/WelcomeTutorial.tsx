@@ -16,11 +16,13 @@ export function TutorialProvider({
   mode,
   section,
   revealSection,
+  setMobileMenu,
 }: {
   children: ReactNode;
   mode: "real" | "demo";
   section?: string;
   revealSection?: (section: string) => void;
+  setMobileMenu?: (open: boolean) => void;
 }) {
   const profile = useProfile();
   const [step, setStep] = useState<number | null>(null);
@@ -35,6 +37,16 @@ export function TutorialProvider({
     invalidate: ["profile"],
   });
   const current = step === null ? null : TUTORIAL_STEPS[step];
+
+  useEffect(() => {
+    if (!current?.target || !setMobileMenu || typeof window === "undefined") return;
+    const isMobile = window.innerWidth < 768;
+    const dockTargets = ["painel", "planejador", "foco", "flashcards"];
+    const contentTargets = ["atividades", "calendario"];
+    const shouldOpenMenu =
+      isMobile && !dockTargets.includes(current.target) && !contentTargets.includes(current.target);
+    setMobileMenu(shouldOpenMenu);
+  }, [current, setMobileMenu]);
 
   useEffect(() => {
     if (!dismissed && shouldShowTutorial(profile.data, mode)) setStep((value) => value ?? 0);

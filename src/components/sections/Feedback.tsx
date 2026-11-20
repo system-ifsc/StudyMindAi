@@ -60,7 +60,7 @@ export function Feedback() {
         signal: AbortSignal.timeout(35000),
       });
       const result = await response.json();
-      if (!response.ok || (result.saved !== true && result.sent !== true))
+      if (!response.ok || result.saved !== true || result.sent !== true)
         throw new Error(result.error || "Não foi possível enviar seu feedback.");
       setMessage("");
       setSent(true);

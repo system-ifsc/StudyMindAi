@@ -35,7 +35,7 @@ it("mantém a mensagem após falha e limpa somente quando o servidor confirma", 
     .fn()
     .mockResolvedValueOnce(Response.json({ configured: true }))
     .mockResolvedValueOnce(Response.json({ error: "Falha ao enviar" }, { status: 502 }))
-    .mockResolvedValueOnce(Response.json({ sent: true }));
+    .mockResolvedValueOnce(Response.json({ saved: true, sent: true, id: "receipt-123" }));
   vi.stubGlobal("fetch", fetcher);
   render(<Feedback />);
   const button = screen.getByRole("button", { name: "Enviar feedback" });
@@ -84,14 +84,19 @@ it("valida o Gmail antes de chamar a API de envio", async () => {
   expect(fetcher).toHaveBeenCalledTimes(1);
 });
 
-it("confirma o registro sem exibir protocolo ou detalhes de e-mail", async () => {
+it("não confirma o feedback quando o registro não foi enviado por e-mail", async () => {
   mocks.session.mockResolvedValue({ data: { session: { access_token: "test" } } });
   vi.stubGlobal(
     "fetch",
     vi
       .fn()
       .mockResolvedValueOnce(Response.json({ configured: true, emailConfigured: false }))
-      .mockResolvedValueOnce(Response.json({ saved: true, sent: false, id: "receipt-123" })),
+      .mockResolvedValueOnce(
+        Response.json(
+          { error: "Não foi possível enviar o feedback por e-mail.", saved: true, sent: false },
+          { status: 502 },
+        ),
+      ),
   );
   render(<Feedback />);
   const button = screen.getByRole("button", { name: "Enviar feedback" });
@@ -102,8 +107,7 @@ it("confirma o registro sem exibir protocolo ou detalhes de e-mail", async () =>
     target: { value: "Melhorar o calendário" },
   });
   fireEvent.click(button);
-  expect(await screen.findByRole("status")).toHaveTextContent("Feedback recebido!");
+  expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível enviar");
   expect(screen.queryByText(/receipt-123/)).not.toBeInTheDocument();
-  expect(screen.queryByText(/Uma cópia foi encaminhada por e-mail/)).not.toBeInTheDocument();
-  expect(screen.getByLabelText("Sua mensagem")).toHaveValue("");
+  expect(screen.getByLabelText("Sua mensagem")).toHaveValue("Melhorar o calendário");
 });

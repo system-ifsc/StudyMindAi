@@ -12,9 +12,10 @@ const json = (body: unknown, status = 200) =>
     headers: { "Cache-Control": "no-store", Vary: "Authorization" },
   });
 export function feedbackStatus() {
+  const emailConfigured = gmailConfigured();
   return json({
-    configured: true,
-    emailConfigured: gmailConfigured(),
+    configured: emailConfigured,
+    emailConfigured,
   });
 }
 export async function handleFeedback(request: Request) {
@@ -87,14 +88,28 @@ export async function handleFeedback(request: Request) {
       503,
     );
   }
-  let emailSent = false;
-  if (gmailConfigured()) {
-    try {
-      await sendFeedbackEmail(parsed.data, user);
-      emailSent = true;
-    } catch {
-      // Registration is durable even when the optional email provider fails.
-    }
+  if (!gmailConfigured())
+    return json(
+      {
+        error: "O envio por e-mail está temporariamente indisponível. Tente novamente mais tarde.",
+        saved: true,
+        sent: false,
+        id,
+      },
+      503,
+    );
+  try {
+    await sendFeedbackEmail(parsed.data, user);
+  } catch {
+    return json(
+      {
+        error: "Não foi possível enviar o feedback por e-mail. Tente novamente mais tarde.",
+        saved: true,
+        sent: false,
+        id,
+      },
+      502,
+    );
   }
-  return json({ saved: true, sent: emailSent, id });
+  return json({ saved: true, sent: true, id });
 }

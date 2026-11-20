@@ -121,7 +121,7 @@ Há testes E2E de desktop/celular no CI, Markdown seguro e cópia de respostas, 
 
 ## Feedback dos usuários
 
-A aba **Conta → Feedback** pede nome, Gmail para contato, tipo e mensagem. O registro acontece pelo próprio app, por uma API autenticada, com protocolo e persistência no banco do servidor (SQLite local ou Supabase). Não exige configurar Gmail. Os registros ficam na tabela `app_feedback`, separados dos backups de estudos; snapshots completos do SQLite os incluem. No Supabase, aplique as migrações com `npm run db:setup` antes de usar. O Gmail informado é usado para resposta (`Reply-To`); o remetente é a conta autorizada do app. Não há redirecionamento para Gmail ou aplicativo de e-mail. Opcionalmente, configure a conta remetente para encaminhar uma cópia a `system.ifsc@gmail.com`. A confirmação distingue o registro no banco da entrega por e-mail. Uma falha no Gmail não perde o feedback registrado; não há reenvio automático das cópias.
+A aba **Conta → Feedback** pede nome, Gmail para contato, tipo e mensagem. O envio acontece pelo próprio app, por uma API autenticada, e só confirma sucesso depois que o Gmail aceita a mensagem. O registro é persistido no banco do servidor (SQLite local ou Supabase) antes do envio para evitar perda do texto; se o Gmail falhar, o app informa o erro e o feedback fica registrado para nova tentativa. Os registros ficam na tabela `app_feedback`, separados dos backups de estudos; snapshots completos do SQLite os incluem. No Supabase, aplique as migrações com `npm run db:setup` antes de usar. O Gmail informado é usado para resposta (`Reply-To`); o remetente é a conta autorizada do app. Não há redirecionamento para Gmail ou aplicativo de e-mail.
 
 A opção mais simples é SMTP com senha de app:
 

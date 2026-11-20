@@ -69,17 +69,16 @@ it("sends only to the fixed recipient with the submitted contact address", async
   expect(mime).toContain("From: StudyMind <system.ifsc@gmail.com>");
   expect(options.headers).toMatchObject({ Authorization: "Bearer access-token" });
 });
-it("saves even without email configuration or when the provider fails", async () => {
+it("does not confirm delivery when email is unconfigured or the provider fails", async () => {
   vi.stubEnv("GMAIL_REFRESH_TOKEN", "");
+  expect((await send({ category: "Opinião", message: "Gostei muito do app" })).status).toBe(503);
   expect(
     await (await send({ category: "Opinião", message: "Gostei muito do app" })).json(),
-  ).toEqual({ saved: true, sent: false, id: "receipt-123" });
+  ).toMatchObject({ saved: true, sent: false });
   expect(fetch).not.toHaveBeenCalled();
   vi.stubEnv("GMAIL_REFRESH_TOKEN", "secret");
   vi.mocked(fetch).mockResolvedValue(new Response("failure", { status: 500 }));
-  expect(
-    await (await send({ category: "Opinião", message: "Gostei muito do app" })).json(),
-  ).toEqual({ saved: true, sent: false, id: "receipt-123" });
+  expect((await send({ category: "Opinião", message: "Gostei muito do app" })).status).toBe(502);
 });
 it("limits attempts per authenticated user", async () => {
   for (let i = 0; i < 5; i++)
@@ -91,14 +90,14 @@ it("does not send a message when OAuth refresh fails", async () => {
   vi.mocked(fetch).mockResolvedValue(Response.json({ error: "invalid_grant" }, { status: 400 }));
   expect(
     await (await send({ category: "Opinião", message: "Gostei muito do app" })).json(),
-  ).toEqual({ saved: true, sent: false, id: "receipt-123" });
+  ).toMatchObject({ saved: true, sent: false });
   expect(fetch).toHaveBeenCalledTimes(1);
 });
 it("rejects missing confirmation from Gmail", async () => {
   vi.mocked(fetch).mockImplementation(async () => Response.json({ access_token: "token" }));
   expect(
     await (await send({ category: "Opinião", message: "Gostei muito do app" })).json(),
-  ).toEqual({ saved: true, sent: false, id: "receipt-123" });
+  ).toMatchObject({ saved: true, sent: false });
 });
 
 it("rejects missing name, non-Gmail contacts and header injection", async () => {
@@ -116,7 +115,7 @@ it("rejects missing name, non-Gmail contacts and header injection", async () => 
 
 it("enables registration without Gmail", async () => {
   vi.stubEnv("GMAIL_REFRESH_TOKEN", "");
-  expect(await feedbackStatus().json()).toEqual({ configured: true, emailConfigured: false });
+  expect(await feedbackStatus().json()).toEqual({ configured: false, emailConfigured: false });
 });
 it("does not confirm success or send email when persistence fails", async () => {
   record.mockRejectedValueOnce(new Error("disk full"));

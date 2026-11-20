@@ -118,3 +118,22 @@ OCR depende do download inicial dos idiomas e da qualidade do documento. Pomodor
 ## Confiabilidade e operação
 
 Há testes E2E de desktop/celular no CI, Markdown seguro e cópia de respostas, backup v2, snapshots consistentes do SQLite, saúde em `/api/health` e métricas autenticadas em `/api/monitoring`. Consulte [o guia de operação e recuperação](./docs/operacao-e-recuperacao.md) para executar os testes, aplicar a migração opcional do Supabase e ensaiar a restauração sem sobrescrever dados.
+
+## Feedback dos usuários
+
+A aba **Conta → Feedback** pede nome, Gmail para contato, tipo e mensagem. O registro acontece pelo próprio app, por uma API autenticada, com protocolo e persistência no banco do servidor (SQLite local ou Supabase). Não exige configurar Gmail. Os registros ficam na tabela `app_feedback`, separados dos backups de estudos; snapshots completos do SQLite os incluem. No Supabase, aplique as migrações com `npm run db:setup` antes de usar. O Gmail informado é usado para resposta (`Reply-To`); o remetente é a conta autorizada do app. Não há redirecionamento para Gmail ou aplicativo de e-mail. Opcionalmente, configure a conta remetente para encaminhar uma cópia a `system.ifsc@gmail.com`. A confirmação distingue o registro no banco da entrega por e-mail. Uma falha no Gmail não perde o feedback registrado; não há reenvio automático das cópias.
+
+A opção mais simples é SMTP com senha de app:
+
+1. Na conta remetente, ative a verificação em duas etapas e acesse [Senhas de app](https://myaccount.google.com/apppasswords).
+2. Crie uma senha chamada **StudyMind** e configure `GMAIL_SENDER` e `GMAIL_APP_PASSWORD` somente no `.env` privado do servidor. Não use a senha normal da conta.
+3. Reinicie o servidor. O envio usa `smtp.gmail.com:465` com TLS e mantém o destinatário fixo. Na hospedagem, configure as mesmas variáveis privadas e reinicie o serviço.
+
+Se a conta não oferecer senhas de app, use OAuth como alternativa. SMTP tem prioridade quando a senha de app estiver configurada:
+
+1. No Google Cloud, habilite a Gmail API e configure o consentimento OAuth do projeto.
+2. Crie um cliente OAuth do tipo **Aplicativo para computador** e baixe o JSON das credenciais para um local privado fora do repositório.
+3. Execute `npm run feedback:authorize -- /caminho/privado/client_secret.json`. Abra a URL exibida, entre na conta remetente e autorize somente `gmail.send`. O script grava as credenciais no `.env` ignorado pelo Git, sem exibi-las.
+4. Reinicie o servidor. Se estiver hospedado, transfira `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN` e `GMAIL_SENDER` para as variáveis privadas da hospedagem e faça novo deploy. O `.env` local não configura a hospedagem.
+
+O remetente configurado deve ser a conta autorizada. Para consentimento externo em modo **Testing**, tokens com esse escopo expiram em sete dias; configure o status de publicação apropriado antes do uso contínuo. Consulte a [documentação OAuth do Google](https://developers.google.com/identity/protocols/oauth2/web-server). O script de autorização não envia e-mails. O nome e o Gmail informados no formulário são incluídos na mensagem para permitir resposta. Nenhuma credencial Google é exposta no navegador; a demonstração não envia feedback.

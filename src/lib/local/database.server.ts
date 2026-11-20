@@ -1,3 +1,4 @@
+import feedbackSchema from "../../../supabase/migrations/sqlite/0002_feedback.sql?raw";
 import initialSchema from "../../../supabase/migrations/sqlite/0001_initial.sql?raw";
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync, chmodSync } from "node:fs";
@@ -16,7 +17,7 @@ export function localDatabase() {
   db.exec("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;");
   const version = (db.prepare("PRAGMA user_version").get() as { user_version: number })
     .user_version;
-  if (version > 1) {
+  if (version > 2) {
     db.close();
     throw new Error("O banco local foi criado por uma versão mais nova do aplicativo.");
   }
@@ -24,6 +25,18 @@ export function localDatabase() {
     db.exec("BEGIN IMMEDIATE");
     try {
       db.exec(initialSchema);
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      db.close();
+      throw error;
+    }
+  }
+
+  if (version < 2) {
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      db.exec(feedbackSchema);
       db.exec("COMMIT");
     } catch (error) {
       db.exec("ROLLBACK");

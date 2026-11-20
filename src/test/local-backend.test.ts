@@ -2,6 +2,7 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterAll, beforeAll, describe, it, expect, vi } from "vitest";
+import { handleFeedback } from "@/lib/feedback.server";
 import { handleLocalApi } from "@/lib/local/api.server";
 import { closeLocalDatabase, localDatabase } from "@/lib/local/database.server";
 import { createLocalRepo } from "@/lib/repo/local.server";
@@ -251,5 +252,38 @@ describe("backend local real sem Supabase", () => {
   it("sair revoga a sessão no servidor", async () => {
     expect((await call({ op: "auth:logout" }, cookieB)).status).toBe(200);
     expect((await call({ op: "profile" }, cookieB)).status).toBe(401);
+  });
+});
+
+it("persiste feedback sem Gmail e mantém o protocolo após reabrir SQLite", async () => {
+  vi.stubEnv("GMAIL_APP_PASSWORD", "");
+  vi.stubEnv("GMAIL_REFRESH_TOKEN", "");
+  const login = await call({
+    op: "auth:login",
+    email: "a@test.example",
+    password: "new-password-123",
+  });
+  const activeToken = (await login.json()).data.session.access_token;
+  const response = await handleFeedback(
+    new Request("http://localhost/api/feedback", {
+      method: "POST",
+      headers: { authorization: `Bearer ${activeToken}` },
+      body: JSON.stringify({
+        name: "Teste Local",
+        email: "teste@gmail.com",
+        category: "Problema",
+        message: "Não consigo usar o calendário",
+      }),
+    }),
+  );
+  expect(response.status).toBe(200);
+  const result = await response.json();
+  expect(result).toMatchObject({ saved: true, sent: false });
+  closeLocalDatabase();
+  const row = localDatabase().prepare("SELECT * FROM app_feedback WHERE id=?").get(result.id);
+  expect(row).toMatchObject({
+    user_id: ownerA,
+    name: "Teste Local",
+    message: "Não consigo usar o calendário",
   });
 });

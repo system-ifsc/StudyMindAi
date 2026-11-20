@@ -675,3 +675,33 @@ it("valida referências do backup completo e remapeia relações sem alterar a o
   missingFile.files = [];
   expect(fullBackupSchema.safeParse(missingFile).success).toBe(false);
 });
+
+import { feedbackSchema } from "@/lib/core/feedback";
+describe("feedback", () => {
+  const valid = {
+    name: " Ana Silva ",
+    email: "Ana@gmail.com",
+    category: "Sugestão",
+    message: " Melhorar calendário ",
+  };
+  it("valida e normaliza o contato e a mensagem", () => {
+    expect(feedbackSchema.parse(valid)).toEqual({
+      ...valid,
+      name: "Ana Silva",
+      email: "ana@gmail.com",
+      message: "Melhorar calendário",
+    });
+  });
+  it("exige nome, Gmail, categoria e mensagem válidos", () => {
+    for (const invalid of [
+      { name: "" },
+      { email: "outro@example.com" },
+      { email: "@gmail.com" },
+      { category: "Outra" },
+      { message: " " },
+      { message: "a".repeat(5001) },
+    ]) {
+      expect(feedbackSchema.safeParse({ ...valid, ...invalid }).success).toBe(false);
+    }
+  });
+});

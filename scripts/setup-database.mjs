@@ -20,10 +20,24 @@ if (local) {
     try {
       db.exec("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;");
       const version = db.prepare("PRAGMA user_version").get().user_version;
-      if (version > 1) throw new Error("O banco local foi criado por uma versão mais nova.");
+      if (version > 2) throw new Error("O banco local foi criado por uma versão mais nova.");
       if (version === 0) {
         const schema = await readFile(
           new URL("../supabase/migrations/sqlite/0001_initial.sql", import.meta.url),
+          "utf8",
+        );
+        db.exec("BEGIN IMMEDIATE");
+        try {
+          db.exec(schema);
+          db.exec("COMMIT");
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
+      }
+      if (version < 2) {
+        const schema = await readFile(
+          new URL("../supabase/migrations/sqlite/0002_feedback.sql", import.meta.url),
           "utf8",
         );
         db.exec("BEGIN IMMEDIATE");

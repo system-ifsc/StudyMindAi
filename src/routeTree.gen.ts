@@ -17,6 +17,7 @@ import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as ApiAssistantRouteImport } from './routes/api/assistant'
+import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiLocalRouteImport } from './routes/api/local'
 import { Route as ApiMonitoringRouteImport } from './routes/api/monitoring'
@@ -63,6 +64,11 @@ const ApiAssistantRoute = ApiAssistantRouteImport.update({
   path: '/api/assistant',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFeedbackRoute = ApiFeedbackRouteImport.update({
+  id: '/api/feedback',
+  path: '/api/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
   path: '/api/health',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/api/assistant': typeof ApiAssistantRoute
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/health': typeof ApiHealthRoute
   '/api/local': typeof ApiLocalRoute
   '/api/monitoring': typeof ApiMonitoringRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/api/assistant': typeof ApiAssistantRoute
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/health': typeof ApiHealthRoute
   '/api/local': typeof ApiLocalRoute
   '/api/monitoring': typeof ApiMonitoringRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/api/assistant': typeof ApiAssistantRoute
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/health': typeof ApiHealthRoute
   '/api/local': typeof ApiLocalRoute
   '/api/monitoring': typeof ApiMonitoringRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/onboarding'
     | '/api/assistant'
+    | '/api/feedback'
     | '/api/health'
     | '/api/local'
     | '/api/monitoring'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/onboarding'
     | '/api/assistant'
+    | '/api/feedback'
     | '/api/health'
     | '/api/local'
     | '/api/monitoring'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/onboarding'
     | '/api/assistant'
+    | '/api/feedback'
     | '/api/health'
     | '/api/local'
     | '/api/monitoring'
@@ -198,6 +210,7 @@ export interface RootRouteChildren {
   PrivacidadeRoute: typeof PrivacidadeRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiAssistantRoute: typeof ApiAssistantRoute
+  ApiFeedbackRoute: typeof ApiFeedbackRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiLocalRoute: typeof ApiLocalRoute
   ApiMonitoringRoute: typeof ApiMonitoringRoute
@@ -261,6 +274,13 @@ declare module '@tanstack/react-router' {
       path: '/api/assistant'
       fullPath: '/api/assistant'
       preLoaderRoute: typeof ApiAssistantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feedback': {
+      id: '/api/feedback'
+      path: '/api/feedback'
+      fullPath: '/api/feedback'
+      preLoaderRoute: typeof ApiFeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/health': {
@@ -329,6 +349,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacidadeRoute: PrivacidadeRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiAssistantRoute: ApiAssistantRoute,
+  ApiFeedbackRoute: ApiFeedbackRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiLocalRoute: ApiLocalRoute,
   ApiMonitoringRoute: ApiMonitoringRoute,

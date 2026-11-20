@@ -1,5 +1,6 @@
 import { lazy, type ComponentType } from "react";
 import {
+  MessageSquare,
   LayoutDashboard,
   BookOpen,
   ListChecks,
@@ -27,6 +28,8 @@ const Exercises = lazy(() => import("./Exercises").then((m) => ({ default: m.Exe
 const Materials = lazy(() => import("./Materials").then((m) => ({ default: m.Materials })));
 const Assistant = lazy(() => import("./Assistant").then((m) => ({ default: m.Assistant })));
 const Settings = lazy(() => import("./Settings").then((m) => ({ default: m.Settings })));
+
+const Feedback = lazy(() => import("./Feedback").then((m) => ({ default: m.Feedback })));
 
 export interface SectionProps {
   go: (section: string) => void;
@@ -74,6 +77,7 @@ export const SECTIONS: Section[] = [
     group: "Prática",
     Component: Assistant,
   },
+  { key: "feedback", label: "Feedback", icon: MessageSquare, group: "Conta", Component: Feedback },
   { key: "metas", label: "Metas", icon: Target, group: "Conta", Component: Goals },
   {
     key: "desempenho",

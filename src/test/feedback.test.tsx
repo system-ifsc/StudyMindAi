@@ -1,0 +1,109 @@
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import { Feedback } from "@/components/sections/Feedback";
+const mocks = vi.hoisted(() => ({ mode: "real", session: vi.fn() }));
+vi.mock("@/hooks/use-data", () => ({ useRepo: () => ({ mode: mocks.mode }) }));
+vi.mock("@/lib/auth/client", () => ({ auth: { getSession: mocks.session } }));
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  mocks.mode = "real";
+  vi.clearAllMocks();
+});
+it("bloqueia envio e acesso à API na demonstração", () => {
+  mocks.mode = "demo";
+  const fetcher = vi.fn();
+  vi.stubGlobal("fetch", fetcher);
+  render(<Feedback />);
+  expect(screen.getByRole("button", { name: "Enviar feedback" })).toBeDisabled();
+  expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  expect(fetcher).not.toHaveBeenCalled();
+});
+it("mantém o contato no app quando o servidor não está configurado", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json({ configured: false })),
+  );
+  render(<Feedback />);
+  await screen.findByText(/O contato pelo app está temporariamente indisponível/);
+  expect(screen.getByRole("button", { name: "Enviar feedback" })).toBeDisabled();
+  expect(screen.queryByRole("link")).not.toBeInTheDocument();
+});
+it("mantém a mensagem após falha e limpa somente quando o servidor confirma", async () => {
+  mocks.session.mockResolvedValue({ data: { session: { access_token: "test" } } });
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json({ configured: true }))
+    .mockResolvedValueOnce(Response.json({ error: "Falha ao enviar" }, { status: 502 }))
+    .mockResolvedValueOnce(Response.json({ sent: true }));
+  vi.stubGlobal("fetch", fetcher);
+  render(<Feedback />);
+  const button = screen.getByRole("button", { name: "Enviar feedback" });
+  await waitFor(() => expect(button).not.toBeDisabled());
+  fireEvent.change(screen.getByLabelText("Seu nome"), { target: { value: "Ana Silva" } });
+  fireEvent.change(screen.getByLabelText("Seu Gmail"), { target: { value: "ana@gmail.com" } });
+  const input = screen.getByLabelText("Sua mensagem");
+  fireEvent.change(input, { target: { value: "Melhorar o calendário de estudos" } });
+  fireEvent.click(button);
+  expect(await screen.findByRole("alert")).toHaveTextContent("Falha ao enviar");
+  expect(input).toHaveValue("Melhorar o calendário de estudos");
+  expect(screen.getByLabelText("Seu nome")).toHaveValue("Ana Silva");
+  expect(screen.getByLabelText("Seu Gmail")).toHaveValue("ana@gmail.com");
+  fireEvent.click(button);
+  await screen.findByText(/Feedback recebido!/);
+  expect(input).toHaveValue("");
+  expect(fetcher).toHaveBeenNthCalledWith(
+    2,
+    "/api/feedback",
+    expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: "Bearer test" }),
+      body: JSON.stringify({
+        name: "Ana Silva",
+        email: "ana@gmail.com",
+        category: "Opinião",
+        message: "Melhorar o calendário de estudos",
+      }),
+    }),
+  );
+});
+
+it("valida o Gmail antes de chamar a API de envio", async () => {
+  const fetcher = vi.fn(async () => Response.json({ configured: true }));
+  vi.stubGlobal("fetch", fetcher);
+  render(<Feedback />);
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Enviar feedback" })).not.toBeDisabled(),
+  );
+  fireEvent.change(screen.getByLabelText("Seu nome"), { target: { value: "Ana Silva" } });
+  fireEvent.change(screen.getByLabelText("Seu Gmail"), { target: { value: "ana@example.com" } });
+  fireEvent.change(screen.getByLabelText("Sua mensagem"), {
+    target: { value: "Melhorar calendário" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Enviar feedback" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("@gmail.com");
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
+it("confirma o registro sem exibir protocolo ou detalhes de e-mail", async () => {
+  mocks.session.mockResolvedValue({ data: { session: { access_token: "test" } } });
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ configured: true, emailConfigured: false }))
+      .mockResolvedValueOnce(Response.json({ saved: true, sent: false, id: "receipt-123" })),
+  );
+  render(<Feedback />);
+  const button = screen.getByRole("button", { name: "Enviar feedback" });
+  await waitFor(() => expect(button).not.toBeDisabled());
+  fireEvent.change(screen.getByLabelText("Seu nome"), { target: { value: "Ana Silva" } });
+  fireEvent.change(screen.getByLabelText("Seu Gmail"), { target: { value: "ana@gmail.com" } });
+  fireEvent.change(screen.getByLabelText("Sua mensagem"), {
+    target: { value: "Melhorar o calendário" },
+  });
+  fireEvent.click(button);
+  expect(await screen.findByRole("status")).toHaveTextContent("Feedback recebido!");
+  expect(screen.queryByText(/receipt-123/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Uma cópia foi encaminhada por e-mail/)).not.toBeInTheDocument();
+  expect(screen.getByLabelText("Sua mensagem")).toHaveValue("");
+});

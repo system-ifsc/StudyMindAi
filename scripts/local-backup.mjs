@@ -10,7 +10,7 @@ function checkDatabase(path) {
     const result = db.prepare("PRAGMA integrity_check").all();
     if (result.length !== 1 || Object.values(result[0])[0] !== "ok")
       throw new Error("A integridade SQLite falhou.");
-    if (db.prepare("PRAGMA user_version").get().user_version !== 1)
+    if (![1, 2].includes(db.prepare("PRAGMA user_version").get().user_version))
       throw new Error("Versão SQLite incompatível.");
     for (const table of ["users", "records", "files", "settings"])
       db.prepare(`SELECT count(*) FROM ${table}`).get();

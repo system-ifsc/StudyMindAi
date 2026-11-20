@@ -2,7 +2,7 @@ import { availabilityError } from "@/lib/core/profile";
 import { BackLink } from "@/components/navigation/BackLink";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, BookOpen, Target, Clock3, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { createRepo } from "@/lib/repo";
 import { Button } from "@/components/ui/button";
@@ -89,53 +89,96 @@ function Onboarding() {
   }
 
   return (
-    <main className="plasma-page min-h-screen px-4 py-10">
+    <main className="plasma-page onboarding-start min-h-screen px-4 py-8 sm:py-12">
       <div className="mx-auto max-w-2xl">
         <Logo />
         <BackLink className="mt-4" />
-        <h1 className="mt-10 text-4xl font-semibold">Vamos montar sua rotina</h1>
+        <p className="mt-10 text-xs font-semibold tracking-widest text-primary">
+          SEU PRIMEIRO PASSO
+        </p>
+        <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">Vamos montar sua rotina</h1>
         <p className="mt-2 text-muted-foreground">
-          Três informações e o planejador já consegue trabalhar.
+          Um plano que cabe na sua vida. Conte um pouco sobre você; depois, adicione sua primeira
+          atividade.
         </p>
         <form
           onSubmit={submit}
           className="glass-panel mt-8 space-y-6 rounded-3xl border bg-card p-6 shadow-card sm:p-8"
         >
-          <div className="grid gap-4 sm:grid-cols-2">
+          <section className="space-y-4" aria-labelledby="onboarding-about">
+            <h2 id="onboarding-about" className="onboarding-section-title">
+              <span>
+                <BookOpen aria-hidden className="size-4" />
+              </span>{" "}
+              01 · Seu ponto de partida
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="ob-name">Como quer ser chamado?</Label>
+                <Input
+                  id="ob-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={80}
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ob-course">Curso</Label>
+                <CourseSelect id="ob-course" value={course} onChange={setCourse} />
+              </div>
+            </div>
+          </section>
+          <section className="space-y-4" aria-labelledby="onboarding-goal">
+            <h2 id="onboarding-goal" className="onboarding-section-title">
+              <span>
+                <Target aria-hidden className="size-4" />
+              </span>{" "}
+              02 · Aonde você quer chegar?
+            </h2>
             <div className="space-y-1.5">
-              <Label htmlFor="ob-name">Como quer ser chamado?</Label>
-              <Input
-                id="ob-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={80}
+              <Label htmlFor="ob-obj">Objetivo principal</Label>
+              <Textarea
+                id="ob-obj"
+                value={objective}
+                onChange={(e) => setObjective(e.target.value)}
+                maxLength={300}
+                placeholder="Ex.: Entender programação e me preparar para a próxima prova"
                 required
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ob-course">Curso</Label>
-              <CourseSelect id="ob-course" value={course} onChange={setCourse} />
-            </div>
+          </section>
+          <section className="space-y-4" aria-labelledby="onboarding-time">
+            <h2 id="onboarding-time" className="onboarding-section-title">
+              <span>
+                <Clock3 aria-hidden className="size-4" />
+              </span>{" "}
+              03 · Um tempo que funciona para você
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Comece com uma rotina possível. Você pode ajustar esses horários depois.
+            </p>
+            <AvailabilityEditor value={avail} onChange={setAvail} />
+            <p className="text-sm text-muted-foreground">
+              Total semanal: <strong className="text-foreground">{formatMinutes(total)}</strong>
+            </p>
+          </section>
+          <div className="border-t pt-6">
+            <Button
+              type="submit"
+              variant="hero"
+              size="lg"
+              className="w-full"
+              disabled={busy || loading}
+            >
+              {(busy || loading) && <Loader2 className="size-4 animate-spin" aria-hidden />}
+              {loading ? "Carregando perfil…" : "Ir para o painel"}
+              {!busy && !loading && <ArrowRight className="size-4" aria-hidden />}
+            </Button>
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              Tudo pronto para começar. Suas preferências podem mudar com você.
+            </p>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="ob-obj">Objetivo principal</Label>
-            <Textarea
-              id="ob-obj"
-              value={objective}
-              onChange={(e) => setObjective(e.target.value)}
-              maxLength={300}
-              placeholder="Ex.: Passar no vestibular de dezembro"
-              required
-            />
-          </div>
-          <AvailabilityEditor value={avail} onChange={setAvail} />
-          <p className="text-sm text-muted-foreground">
-            Total semanal: <strong className="text-foreground">{formatMinutes(total)}</strong>
-          </p>
-          <Button type="submit" variant="hero" size="lg" disabled={busy || loading}>
-            {(busy || loading) && <Loader2 className="size-4 animate-spin" aria-hidden />}
-            {loading ? "Carregando perfil…" : "Ir para o painel"}
-          </Button>
         </form>
       </div>
     </main>

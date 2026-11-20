@@ -27,7 +27,7 @@ function Welcome() {
   const revealRef = useReveal();
   const sceneRef = useSceneMotion();
   return (
-    <main className="welcome-screen">
+    <main className="welcome-screen welcome-start">
       <div className="welcome-layout" ref={revealRef}>
         <div className="welcome-bubbles" aria-hidden>
           <span />
@@ -110,15 +110,15 @@ function Welcome() {
           </div>
         </div>
         <section className="welcome-copy" aria-labelledby="welcome-title">
-          <p className="welcome-eyebrow">SEU ESPAÇO PARA IR ALÉM</p>
+          <p className="welcome-eyebrow">UM BOM COMEÇO MUDA O SEU DIA</p>
           <h1 id="welcome-title">
-            Cultive seu foco.
+            Menos distração.
             <br />
-            <span>Veja seu futuro crescer.</span>
+            <span>Mais espaço para aprender.</span>
           </h1>
           <p className="welcome-description">
-            Seus estudos, seu ritmo. Um espaço para organizar sua rotina e transformar foco em
-            conquistas.
+            Organize o que precisa estudar, encontre seu ritmo e acompanhe cada conquista. Comece
+            com um pequeno passo hoje.
           </p>
           <div className="entry-benefits">
             <span>
@@ -141,26 +141,31 @@ function Welcome() {
               <Link to="/login">Já tenho uma conta</Link>
             </Button>
           </div>
-          <p className="welcome-footnote">Um pouco mais perto do seu futuro.</p>
+          <p className="welcome-footnote">
+            <Link to="/demo/$section" params={{ section: "painel" }}>
+              Experimentar sem cadastro <ArrowRight className="size-3.5" aria-hidden />
+            </Link>
+            <span>Demonstração com dados fictícios.</span>
+          </p>
         </section>
         <section className="welcome-features" aria-label="Seu espaço de estudo">
           <article>
             <span className="feature-number">01</span>
             <BookOpen aria-hidden />
-            <h2>Organize suas ideias</h2>
-            <p>Disciplinas, materiais e atividades no mesmo lugar.</p>
+            <h2>Escolha o que estudar</h2>
+            <p>Adicione suas disciplinas e a primeira atividade.</p>
           </article>
           <article>
             <span className="feature-number">02</span>
             <Timer aria-hidden />
-            <h2>Encontre seu ritmo</h2>
-            <p>Sessões de foco para dedicar atenção ao que importa.</p>
+            <h2>Reserve um tempo para você</h2>
+            <p>Inicie uma sessão de foco, no seu ritmo.</p>
           </article>
           <article>
             <span className="feature-number">03</span>
             <Brain aria-hidden />
-            <h2>Aprenda e relembre</h2>
-            <p>Flashcards e revisões para continuar evoluindo.</p>
+            <h2>Veja seu aprendizado crescer</h2>
+            <p>Revise com cartões e acompanhe sua evolução.</p>
           </article>
         </section>
       </div>

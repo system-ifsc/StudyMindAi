@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { assistantStatus, handleAssistant } from "@/lib/ai/assistant.server";
 
 export const Route = createFileRoute("/api/assistant")({
   server: {
-    handlers: { GET: () => assistantStatus(), POST: ({ request }) => handleAssistant(request) },
+    handlers: {
+      GET: async () => (await import("@/lib/ai/assistant.server")).assistantStatus(),
+      POST: async ({ request }) =>
+        (await import("@/lib/ai/assistant.server")).handleAssistant(request),
+    },
   },
 });

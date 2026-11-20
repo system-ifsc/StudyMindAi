@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   provider: vi.fn(),
   reserve: vi.fn(),
 }));
+vi.mock("@/lib/local/auth.server", () => ({ verifyLocalBearer: vi.fn() }));
+vi.mock("@/lib/repo/local.server", () => ({ createLocalRepo: vi.fn() }));
 vi.mock("@supabase/supabase-js", () => ({ createClient: mocks.client }));
 vi.mock("@/lib/repo/cloud", () => ({
   createCloudRepo: () => ({ get: mocks.get, list: mocks.list }),

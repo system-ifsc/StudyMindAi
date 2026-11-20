@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { feedbackStatus, handleFeedback } from "@/lib/feedback.server";
 
 export const Route = createFileRoute("/api/feedback")({
   server: {
-    handlers: { GET: () => feedbackStatus(), POST: ({ request }) => handleFeedback(request) },
+    handlers: {
+      GET: async () => (await import("@/lib/feedback.server")).feedbackStatus(),
+      POST: async ({ request }) => (await import("@/lib/feedback.server")).handleFeedback(request),
+    },
   },
 });

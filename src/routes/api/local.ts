@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { handleLocalApi } from "@/lib/local/api.server";
+
 export const Route = createFileRoute("/api/local")({
-  server: { handlers: { POST: ({ request }) => handleLocalApi(request) } },
+  server: {
+    handlers: {
+      POST: async ({ request }) => (await import("@/lib/local/api.server")).handleLocalApi(request),
+    },
+  },
 });

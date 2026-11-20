@@ -107,10 +107,14 @@
 .study-app .dock-item[aria-current="page"] .dock-icon {
   box-shadow: 0 3px 10px color-mix(in oklab, var(--primary) 10%, transparent);
 }
+.study-app .page-heading h1 {
+  width: fit-content;
+  max-width: 100%;
+}
 .study-app .page-heading h1::after {
   content: "";
   display: block;
-  width: 32px;
+  width: 100%;
   height: 3px;
   border-radius: 3px;
   margin-top: 14px;

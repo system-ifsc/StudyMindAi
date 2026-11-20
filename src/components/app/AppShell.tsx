@@ -1,7 +1,7 @@
 import { useReveal } from "@/hooks/use-reveal";
 import { BackLink } from "@/components/navigation/BackLink";
 import { TutorialProvider } from "./WelcomeTutorial";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Loading } from "./ui";
 import {
@@ -128,6 +128,7 @@ function Nav({ mode, current }: { mode: Mode; current: string }) {
 }
 
 function AppShellContent({ mode, section }: { mode: Mode; section: string }) {
+  const [tutorialActive, setTutorialActive] = useState(false);
   const revealRef = useReveal(section);
   const navigate = useNavigate();
   const { dark, toggle } = useTheme();
@@ -147,9 +148,10 @@ function AppShellContent({ mode, section }: { mode: Mode; section: string }) {
       section={section}
       revealSection={go}
       setMobileMenu={setOpenMobile}
+      onActiveChange={setTutorialActive}
     >
       <div className="study-app flex min-h-svh w-full min-w-0">
-        <Sidebar collapsible="icon" className="border-r-0">
+        <Sidebar collapsible="icon" className="border-r-0" modal={!tutorialActive}>
           <SidebarHeader className="p-4 pb-3">
             <Logo to={mode === "demo" ? "/" : "/app/painel"} />
             <p className="mt-4 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/60 md:hidden">

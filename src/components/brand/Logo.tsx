@@ -13,7 +13,7 @@ export function Logo({ to = "/", className }: { to?: string; className?: string 
         <Brain className="size-5" aria-hidden />
       </span>
       <span className="font-display text-lg font-semibold leading-none">
-        StudyMind <span className="text-ifsc-red">AI</span>
+        StudyMind <span className="text-primary">AI</span>
       </span>
     </Link>
   );

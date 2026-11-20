@@ -17,12 +17,14 @@ export function TutorialProvider({
   section,
   revealSection,
   setMobileMenu,
+  onActiveChange,
 }: {
   children: ReactNode;
   mode: "real" | "demo";
   section?: string;
   revealSection?: (section: string) => void;
   setMobileMenu?: (open: boolean) => void;
+  onActiveChange?: (active: boolean) => void;
 }) {
   const profile = useProfile();
   const [step, setStep] = useState<number | null>(null);
@@ -37,6 +39,10 @@ export function TutorialProvider({
     invalidate: ["profile"],
   });
   const current = step === null ? null : TUTORIAL_STEPS[step];
+
+  useEffect(() => {
+    onActiveChange?.(step !== null);
+  }, [step, onActiveChange]);
 
   useEffect(() => {
     if (!current?.target || !setMobileMenu || typeof window === "undefined") return;

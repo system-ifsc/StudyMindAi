@@ -17,6 +17,7 @@ import appCss from "../styles.css?url";
 import motionCss from "../motion.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { auth } from "@/lib/auth/client";
+import { preferencesInitScript } from "@/hooks/use-preferences";
 import { themeInitScript } from "@/hooks/use-theme";
 
 function NotFoundComponent() {
@@ -126,7 +127,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <HeadContent />
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript + preferencesInitScript }} />
       </head>
       <body>
         {children}

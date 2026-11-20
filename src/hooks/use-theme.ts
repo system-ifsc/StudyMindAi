@@ -6,12 +6,30 @@ export const themeInitScript = `try{var t=localStorage.getItem("${KEY}");if(t===
 
 export function useTheme() {
   const [dark, setDark] = useState(false);
-  useEffect(() => setDark(document.documentElement.classList.contains("dark")), []);
-  const toggle = () => {
-    const next = !dark;
+  useEffect(() => {
+    const sync = () => setDark(document.documentElement.classList.contains("dark"));
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    window.addEventListener("studymind-theme", sync);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("studymind-theme", sync);
+    };
+  }, []);
+  const setTheme = (next: boolean) => {
+    try {
+      localStorage.setItem(KEY, next ? "dark" : "light");
+    } catch {
+      // Theme switching still works when browser storage is unavailable.
+    }
     document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem(KEY, next ? "dark" : "light");
     setDark(next);
+    window.dispatchEvent(new Event("studymind-theme"));
   };
-  return { dark, toggle };
+  return {
+    dark,
+    toggle: () => setTheme(!document.documentElement.classList.contains("dark")),
+    setTheme,
+  };
 }

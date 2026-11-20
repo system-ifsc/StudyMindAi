@@ -29,8 +29,8 @@
   border-radius: 32px;
   background: var(--card);
   box-shadow:
-    0 32px 90px -45px oklch(0.2 0.04 155 / 42%),
-    0 2px 5px oklch(0.2 0.04 155 / 6%);
+    0 32px 90px -45px oklch(0.2 0.04 var(--theme-hue) / 42%),
+    0 2px 5px oklch(0.2 0.04 var(--theme-hue) / 6%);
   animation: auth-arrive 650ms both;
 }
 .auth-refresh .auth-brand-banner {
@@ -44,9 +44,13 @@
   min-height: 100%;
   padding: 40px;
   background:
-    radial-gradient(circle at 14% 78%, oklch(0.72 0.12 145 / 14%), transparent 28%),
-    linear-gradient(155deg, oklch(0.39 0.075 160), oklch(0.23 0.045 165) 76%);
-  color: oklch(0.97 0.01 155);
+    radial-gradient(circle at 14% 78%, oklch(0.72 0.12 var(--theme-hue) / 14%), transparent 28%),
+    linear-gradient(
+      155deg,
+      oklch(0.39 0.075 var(--theme-hue)),
+      oklch(0.23 0.045 var(--theme-hue)) 76%
+    );
+  color: oklch(0.97 0.01 var(--theme-hue));
 }
 .auth-refresh .auth-brand-banner::after {
   position: absolute;
@@ -56,8 +60,8 @@
   content: "";
   opacity: 0.16;
   background-image:
-    linear-gradient(oklch(0.95 0.02 155 / 12%) 1px, transparent 1px),
-    linear-gradient(90deg, oklch(0.95 0.02 155 / 12%) 1px, transparent 1px);
+    linear-gradient(oklch(0.95 0.02 var(--theme-hue) / 12%) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.95 0.02 var(--theme-hue) / 12%) 1px, transparent 1px);
   background-size: 34px 34px;
   mask-image: linear-gradient(to bottom right, black, transparent 70%);
 }
@@ -79,9 +83,9 @@
   width: 38px;
   height: 38px;
   padding: 7px;
-  border: 1px solid oklch(0.85 0.04 155 / 25%);
+  border: 1px solid oklch(0.85 0.04 var(--theme-hue) / 25%);
   border-radius: 12px;
-  background: oklch(0.9 0.05 155 / 8%);
+  background: oklch(0.9 0.05 var(--theme-hue) / 8%);
 }
 .auth-story {
   margin-top: 54px;
@@ -89,7 +93,7 @@
 .auth-story-kicker {
   font-size: 9px;
   letter-spacing: 2px;
-  color: oklch(0.8 0.05 155);
+  color: oklch(0.8 0.05 var(--theme-hue));
   font-weight: 700;
 }
 .auth-story h2 {
@@ -101,14 +105,14 @@
 }
 .auth-story h2 em {
   font-style: normal;
-  color: oklch(0.83 0.085 155);
+  color: oklch(0.83 0.085 var(--theme-hue));
 }
 .auth-story > p {
   max-width: 330px;
   margin-top: 16px;
   font-size: 13px;
   line-height: 1.8;
-  color: oklch(0.81 0.025 155);
+  color: oklch(0.81 0.025 var(--theme-hue));
 }
 .auth-illustration {
   position: relative;
@@ -123,7 +127,7 @@
   z-index: -1;
   width: 245px;
   height: 245px;
-  border: 1px solid oklch(0.8 0.07 155 / 16%);
+  border: 1px solid oklch(0.8 0.07 var(--theme-hue) / 16%);
   border-radius: 50%;
 }
 .auth-orbit-two {
@@ -135,11 +139,11 @@
 .auth-study-sheet {
   width: 270px;
   padding: 23px;
-  border: 1px solid oklch(0.85 0.03 155);
+  border: 1px solid oklch(0.85 0.03 var(--theme-hue));
   border-radius: 18px;
-  background: oklch(0.97 0.012 100);
-  color: oklch(0.29 0.035 155);
-  box-shadow: 0 20px 40px -20px oklch(0.1 0.02 155 / 50%);
+  background: oklch(0.97 0.012 var(--theme-hue));
+  color: oklch(0.29 0.035 var(--theme-hue));
+  box-shadow: 0 20px 40px -20px oklch(0.1 0.02 var(--theme-hue) / 50%);
   transform: rotate(-6deg);
   animation: auth-sheet-enter 850ms 100ms both;
 }
@@ -147,7 +151,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: oklch(0.44 0.055 155);
+  color: oklch(0.44 0.055 var(--theme-hue));
   font-size: 9px;
   font-weight: 700;
 }
@@ -178,7 +182,7 @@
   display: grid;
   place-items: center;
   border-radius: 5px;
-  background: oklch(0.88 0.045 155);
+  background: oklch(0.88 0.045 var(--theme-hue));
 }
 .auth-sheet-task svg {
   width: 11px;
@@ -186,17 +190,17 @@
 }
 .auth-sheet-pending > span {
   background: transparent;
-  border: 1px solid oklch(0.8 0.03 155);
+  border: 1px solid oklch(0.8 0.03 var(--theme-hue));
 }
 .auth-sheet-rule {
   height: 1px;
   margin: 19px 0 10px;
-  background: oklch(0.87 0.02 155);
+  background: oklch(0.87 0.02 var(--theme-hue));
 }
 .auth-sheet-caption {
   font-size: 7px;
   letter-spacing: 1.3px;
-  color: oklch(0.48 0.04 155);
+  color: oklch(0.48 0.04 var(--theme-hue));
 }
 .auth-floating-note {
   position: absolute;
@@ -206,10 +210,10 @@
   align-items: center;
   gap: 10px;
   padding: 14px 17px;
-  background: oklch(0.86 0.065 155);
-  color: oklch(0.27 0.05 155);
+  background: oklch(0.86 0.065 var(--theme-hue));
+  color: oklch(0.27 0.05 var(--theme-hue));
   border-radius: 14px;
-  box-shadow: 0 10px 25px oklch(0.1 0.02 155 / 15%);
+  box-shadow: 0 10px 25px oklch(0.1 0.02 var(--theme-hue) / 15%);
   transform: rotate(4deg);
   animation: auth-note-float 5s ease-in-out 900ms 3;
 }
@@ -227,13 +231,13 @@
   gap: 8px;
   margin-top: 18px;
   font-size: 10px;
-  color: oklch(0.79 0.03 155);
+  color: oklch(0.79 0.03 var(--theme-hue));
 }
 .auth-story-footer > span {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: oklch(0.8 0.09 155);
+  background: oklch(0.8 0.09 var(--theme-hue));
 }
 .auth-refresh .auth-card {
   display: flex;
@@ -596,13 +600,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid oklch(0.85 0.05 155 / 25%);
+  border: 1px solid oklch(0.85 0.05 var(--theme-hue) / 25%);
   border-radius: 12px;
   padding: 10px 13px;
-  background: oklch(0.3 0.055 160);
-  color: oklch(0.95 0.02 155);
+  background: oklch(0.3 0.055 var(--theme-hue));
+  color: oklch(0.95 0.02 var(--theme-hue));
   font-size: 10px;
-  box-shadow: 0 8px 25px oklch(0.1 0.02 155 / 20%);
+  box-shadow: 0 8px 25px oklch(0.1 0.02 var(--theme-hue) / 20%);
   animation: auth-note-float 6s ease-in-out -2s infinite;
 }
 .auth-mini-badge svg {
@@ -621,14 +625,14 @@
   gap: 6px;
   padding: 7px 10px;
   font-size: 10px;
-  border: 1px solid oklch(0.85 0.05 155 / 20%);
+  border: 1px solid oklch(0.85 0.05 var(--theme-hue) / 20%);
   border-radius: 999px;
-  background: oklch(0.85 0.05 155 / 6%);
+  background: oklch(0.85 0.05 var(--theme-hue) / 6%);
 }
 .auth-feature-pills svg {
   width: 12px;
   height: 12px;
-  color: oklch(0.83 0.085 155);
+  color: oklch(0.83 0.085 var(--theme-hue));
 }
 .auth-refresh .auth-study-sheet {
   animation:

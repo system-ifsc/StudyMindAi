@@ -1,11 +1,11 @@
 import { useTutorial } from "@/hooks/use-tutorial";
 import { availabilityError } from "@/lib/core/profile";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Download, Upload, Moon, Sun } from "lucide-react";
+import { Download, Upload, UserRound, GraduationCap, Database } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useProfile, useRepo, useSave } from "@/hooks/use-data";
-import { useTheme } from "@/hooks/use-theme";
+import { PreferencesSettings } from "./Preferences";
 import { PageHeader, Panel, Spin } from "@/components/app/ui";
 import { AvailabilityEditor } from "@/components/app/AvailabilityEditor";
 import { Button } from "@/components/ui/button";
@@ -38,8 +38,7 @@ export function Settings() {
   const restartTutorial = useTutorial();
   const repo = useRepo(),
     qc = useQueryClient(),
-    profile = useProfile(),
-    { dark, toggle } = useTheme();
+    profile = useProfile();
   const [p, setP] = useState<Profile | null>(null);
   const [pending, setPending] = useState<AnyBackup | null>(null),
     [importing, setImporting] = useState(false);
@@ -124,91 +123,122 @@ export function Settings() {
   return (
     <div className="space-y-6">
       <PageHeader title="Configurações" />
-      {p && (
-        <Panel title="Perfil e disponibilidade">
-          <form onSubmit={submit} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="st-name">Nome</Label>
-                <Input
-                  id="st-name"
-                  value={p.display_name}
-                  maxLength={80}
-                  onChange={(e) => setP({ ...p, display_name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="st-course">Curso</Label>
-                <CourseSelect
-                  id="st-course"
-                  value={p.course}
-                  onChange={(course) => setP({ ...p, course })}
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="st-obj">Objetivo</Label>
-              <Textarea
-                id="st-obj"
-                value={p.objective}
-                maxLength={300}
-                onChange={(e) => setP({ ...p, objective: e.target.value })}
-              />
-            </div>
-            <AvailabilityEditor
-              value={p.availability}
-              onChange={(availability) => setP({ ...p, availability })}
-            />
-            <p className="text-sm text-muted-foreground">
-              Total: {formatMinutes(p.availability.reduce((a, b) => a + b, 0))}/semana (vira a meta
-              semanal).
-            </p>
-            <Button type="submit" disabled={save.isPending}>
-              {save.isPending && <Spin />}Salvar
-            </Button>
-          </form>
-        </Panel>
-      )}
-      <Panel title="Tutorial de boas-vindas">
-        <p className="mb-4 text-sm text-muted-foreground">
-          Conheça os principais recursos e veja onde encontrá-los.
-        </p>
-        <Button variant="outline" onClick={restartTutorial}>
-          Refazer tutorial
-        </Button>
-      </Panel>
-      <Panel title="Aparência">
-        <Button variant="outline" onClick={toggle} aria-pressed={dark}>
-          {dark ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}
-          {dark ? "Usar tema claro" : "Usar tema escuro"}
-        </Button>
-      </Panel>
-      <Panel title="Backup (JSON)">
-        <p className="mb-4 text-sm text-muted-foreground">
-          O backup completo v2 inclui seus estudos, conversas, simulados e arquivos originais, com
-          verificação de integridade (até 64 MB). Importar adiciona os dados com novos IDs, preserva
-          os registros atuais e atualiza o perfil. Backups v1 continuam aceitos. Contas, senhas e
-          sessões de acesso não são exportadas. Guarde o arquivo em local privado.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={exportJson} disabled={exporting || importing}>
-            <Download className="size-4" aria-hidden />
-            Exportar
-          </Button>
-          <input
-            ref={file}
-            type="file"
-            accept="application/json,.json"
-            className="sr-only"
-            id="imp"
-            onChange={(e) => e.target.files?.[0] && pickFile(e.target.files[0])}
-          />
-          <Button variant="outline" onClick={() => file.current?.click()}>
-            <Upload className="size-4" aria-hidden />
-            Importar
-          </Button>
-        </div>
-      </Panel>
+      <PreferencesSettings
+        sections={[
+          {
+            key: "profile",
+            title: "Perfil e disponibilidade",
+            detail: "Seus dados, objetivos e horários de estudo",
+            icon: <UserRound className="size-4" />,
+            content: p ? (
+              <Panel>
+                <form onSubmit={submit} className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="st-name">Nome</Label>
+                      <Input
+                        id="st-name"
+                        value={p.display_name}
+                        maxLength={80}
+                        onChange={(e) => setP({ ...p, display_name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="st-course">Curso</Label>
+                      <CourseSelect
+                        id="st-course"
+                        value={p.course}
+                        onChange={(course) => setP({ ...p, course })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="st-obj">Objetivo</Label>
+                    <Textarea
+                      id="st-obj"
+                      value={p.objective}
+                      maxLength={300}
+                      onChange={(e) => setP({ ...p, objective: e.target.value })}
+                    />
+                  </div>
+                  <AvailabilityEditor
+                    value={p.availability}
+                    onChange={(availability) => setP({ ...p, availability })}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Total: {formatMinutes(p.availability.reduce((a, b) => a + b, 0))}/semana (vira a
+                    meta semanal).
+                  </p>
+                  <Button type="submit" disabled={save.isPending}>
+                    {save.isPending && <Spin />}Salvar
+                  </Button>
+                </form>
+              </Panel>
+            ) : (
+              <Panel>
+                <p className="text-sm text-muted-foreground">
+                  {profile.isError ? "Não foi possível carregar o perfil." : "Carregando perfil…"}
+                </p>
+              </Panel>
+            ),
+          },
+          {
+            key: "tutorial",
+            title: "Tutorial de boas-vindas",
+            detail: "Conheça os recursos e refaça o passeio",
+            icon: <GraduationCap className="size-4" />,
+            content: (
+              <Panel>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Conheça os principais recursos e veja onde encontrá-los.
+                </p>
+                <Button variant="outline" onClick={restartTutorial}>
+                  Refazer tutorial
+                </Button>
+              </Panel>
+            ),
+          },
+          {
+            key: "backup",
+            title: "Backup",
+            detail: "Exporte ou importe seus dados de estudo",
+            icon: <Database className="size-4" />,
+            content: (
+              <Panel>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  O backup completo v2 inclui seus estudos, conversas, simulados e arquivos
+                  originais, com verificação de integridade (até 64 MB). Importar adiciona os dados
+                  com novos IDs, preserva os registros atuais e atualiza o perfil. Backups v1
+                  continuam aceitos. Contas, senhas e sessões de acesso não são exportadas. Guarde o
+                  arquivo em local privado.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={exportJson} disabled={exporting || importing}>
+                    <Download className="size-4" aria-hidden />
+                    Exportar
+                  </Button>
+                  <input
+                    ref={file}
+                    type="file"
+                    accept="application/json,.json"
+                    className="sr-only"
+                    id="imp"
+                    onChange={(e) => e.target.files?.[0] && pickFile(e.target.files[0])}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => file.current?.click()}
+                    disabled={exporting || importing}
+                  >
+                    <Upload className="size-4" aria-hidden />
+                    Importar
+                  </Button>
+                </div>
+              </Panel>
+            ),
+          },
+        ]}
+      />
       <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

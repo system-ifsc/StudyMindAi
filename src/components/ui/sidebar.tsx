@@ -156,6 +156,7 @@ const Sidebar = React.forwardRef<
     side?: "left" | "right";
     variant?: "sidebar" | "floating" | "inset";
     collapsible?: "offcanvas" | "icon" | "none";
+    modal?: boolean;
   }
 >(
   (
@@ -163,6 +164,7 @@ const Sidebar = React.forwardRef<
       side = "left",
       variant = "sidebar",
       collapsible = "offcanvas",
+      modal = true,
       className,
       children,
       ...props
@@ -188,10 +190,16 @@ const Sidebar = React.forwardRef<
 
     if (isMobile) {
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <Sheet open={openMobile} onOpenChange={setOpenMobile} modal={modal} {...props}>
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
+            onOpenAutoFocus={(event) => {
+              if (!modal) event.preventDefault();
+            }}
+            onCloseAutoFocus={(event) => {
+              if (!modal) event.preventDefault();
+            }}
             className="w-(--sidebar-width) max-w-[calc(100vw-2rem)] bg-sidebar p-0 text-sidebar-foreground"
             style={
               {

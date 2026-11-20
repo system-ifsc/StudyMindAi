@@ -1,8 +1,8 @@
+import { readPreferences, savePreferences } from "@/hooks/use-preferences";
 import { useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const SOUND_KEY = "studymind-click-sound";
 const CONTROLS =
   'button, a[href], [role="button"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], [role="menuitem"], input[type="checkbox"], input[type="radio"], select';
 
@@ -14,7 +14,7 @@ export function InteractionFeedback() {
 
   useEffect(() => {
     try {
-      setEnabled(localStorage.getItem(SOUND_KEY) !== "off");
+      setEnabled(readPreferences().sound);
     } catch {
       /* Storage is optional. */
     }
@@ -46,6 +46,11 @@ export function InteractionFeedback() {
           ],
           { duration: 320, easing: "ease-out" },
         );
+      }
+      try {
+        if (readPreferences().vibration) navigator.vibrate?.(12);
+      } catch {
+        // Some devices expose vibration but block it through browser policy.
       }
       if (!enabled) return;
       try {
@@ -85,11 +90,17 @@ export function InteractionFeedback() {
     return () => document.removeEventListener("click", feedback, true);
   }, [enabled]);
 
+  useEffect(() => {
+    const sync = () => setEnabled(readPreferences().sound);
+    window.addEventListener("studymind-preferences", sync);
+    return () => window.removeEventListener("studymind-preferences", sync);
+  }, []);
+
   function toggle() {
     const next = !enabled;
     setEnabled(next);
     try {
-      localStorage.setItem(SOUND_KEY, next ? "on" : "off");
+      savePreferences({ ...readPreferences(), sound: next });
     } catch {
       /* Storage is optional. */
     }

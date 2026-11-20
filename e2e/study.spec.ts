@@ -6,18 +6,29 @@ async function register(page: Page) {
   await page.getByLabel("E-mail", { exact: true }).fill(`e2e-${crypto.randomUUID()}@example.test`);
   await page.getByLabel("Senha", { exact: true }).fill("SenhaE2E-2026!");
   await page.getByRole("button", { name: "Criar conta", exact: true }).click();
-  await page.getByRole("button", { name: "Guardei meu código. Continuar", exact: true }).click();
+  const recovery = page.getByRole("button", { name: "Guardei meu código. Continuar", exact: true });
+  await expect(
+    recovery.or(page.getByRole("heading", { name: "Vamos montar sua rotina" })),
+  ).toBeVisible();
+  if (await recovery.isVisible()) await recovery.click();
+  await expect(page.getByRole("button", { name: "Ir para o painel", exact: true })).toBeEnabled();
   await page
     .getByLabel("Curso", { exact: true })
     .selectOption({ label: "Informática para Internet" });
   await page.getByLabel("Objetivo principal", { exact: true }).fill("Aprender SQL");
   await page.getByRole("button", { name: "Ir para o painel", exact: true }).click();
+  await page.getByRole("button", { name: "Pular tutorial", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeHidden();
   await expect(page.getByRole("heading", { name: /Olá, Estudante/ })).toBeVisible();
 }
 async function rows(page: Page, table: string) {
-  const response = await page.request.post("/api/local", { data: { op: "list", table } });
-  expect(response.ok()).toBeTruthy();
-  return (await response.json()).data;
+  const response = await page.request.post("/api/local", {
+    headers: { origin: new URL(page.url()).origin },
+    data: { op: "list", table },
+  });
+  const result = await response.json();
+  expect(response.ok(), result.error ?? `HTTP ${response.status()}`).toBeTruthy();
+  return result.data;
 }
 test.beforeEach(async ({ page }) => {
   await register(page);
@@ -99,6 +110,7 @@ test("organiza estudos, revisa cartão e restaura backup completo", async ({ pag
   await expect.poll(async () => (await rows(page, "material_files")).length).toBe(1);
   await page.goto("/app/configuracoes");
   const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /^Backup/ }).click();
   await page.getByRole("button", { name: "Exportar", exact: true }).click();
   const download = await downloadPromise;
   const path = await download.path();
@@ -153,6 +165,7 @@ test("todas as seções abrem e a disponibilidade mostra erro específico", asyn
       true,
     );
   }
+  await page.getByRole("button", { name: /Perfil e disponibilidade/ }).click();
   for (const input of await page.getByRole("spinbutton").all()) await input.fill("960");
   await page.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(

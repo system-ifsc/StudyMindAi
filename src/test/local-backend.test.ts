@@ -263,7 +263,7 @@ describe("backend local real sem Supabase", () => {
   });
 });
 
-it("persiste feedback sem Gmail e mantém o protocolo após reabrir SQLite", async () => {
+it("informa indisponibilidade do Gmail, mas persiste o feedback e o protocolo no SQLite", async () => {
   vi.stubEnv("GMAIL_APP_PASSWORD", "");
   vi.stubEnv("GMAIL_REFRESH_TOKEN", "");
   const login = await call({
@@ -284,9 +284,10 @@ it("persiste feedback sem Gmail e mantém o protocolo após reabrir SQLite", asy
       }),
     }),
   );
-  expect(response.status).toBe(200);
+  expect(response.status).toBe(503);
   const result = await response.json();
   expect(result).toMatchObject({ saved: true, sent: false });
+  expect(result.error).toContain("envio por e-mail está temporariamente indisponível");
   closeLocalDatabase();
   const row = localDatabase().prepare("SELECT * FROM app_feedback WHERE id=?").get(result.id);
   expect(row).toMatchObject({

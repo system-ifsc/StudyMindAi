@@ -769,3 +769,30 @@ describe("posicionamento do tutorial", () => {
     }
   });
 });
+
+import { parsePreferences, preferenceChanges, defaultPreferences } from "@/lib/core/preferences";
+
+describe("preferências da interface", () => {
+  it("recupera configurações inválidas sem aplicar valores arbitrários", () => {
+    expect(parsePreferences({ color: "invalid", font: "invalid" })).toEqual(defaultPreferences);
+    expect(parsePreferences(null)).toEqual(defaultPreferences);
+    expect(parsePreferences({ color: "rose" })).toEqual({ ...defaultPreferences, color: "rose" });
+  });
+  it("preserva a paleta antiga e usa a fonte padrão ao migrar o tamanho de texto", () => {
+    expect(parsePreferences({ color: "rose", textSize: "xlarge", shape: "crisp" })).toEqual({
+      ...defaultPreferences,
+      color: "rose",
+      shape: "crisp",
+      font: "manrope",
+    });
+  });
+  it("revisa somente alterações efetivas, sem modificar as preferências salvas", () => {
+    const saved = { ...defaultPreferences };
+    expect(preferenceChanges(saved, { ...saved, color: "blue", sound: false })).toEqual([
+      "color",
+      "sound",
+    ]);
+    expect(preferenceChanges(saved, { ...saved })).toEqual([]);
+    expect(saved).toEqual(defaultPreferences);
+  });
+});

@@ -2,8 +2,11 @@ import { test, expect } from "@playwright/test";
 
 test("tutorial permanece visível em todos os passos e após redimensionar", async ({ page }) => {
   await page.goto("/demo/configuracoes");
+  await page.getByRole("button", { name: /Tutorial de boas-vindas/ }).click();
   await page.getByRole("button", { name: "Refazer tutorial", exact: true }).click();
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog").filter({
+    has: page.getByRole("button", { name: "Pular tutorial", exact: true }),
+  });
   await expect(dialog).toBeVisible();
   for (let step = 1; step <= 15; step++) {
     await expect(dialog).toContainText(`Passo ${step} de 15`);
@@ -18,7 +21,10 @@ test("tutorial permanece visível em todos os passos e após redimensionar", asy
     }).toPass();
     if (step < 15)
       await dialog
-        .getByRole("button", { name: step === 1 ? "Começar" : "Avançar", exact: true })
+        .getByRole("button", {
+          name: step === 1 ? "Começar" : "Avançar",
+          exact: true,
+        })
         .click();
   }
   for (const size of [

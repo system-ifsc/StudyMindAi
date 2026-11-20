@@ -321,7 +321,7 @@ export function Overview({ go }: SectionProps) {
         <Panel>
           <div className="flex items-center justify-between gap-4">
             <span className="flex items-center gap-2">
-              <Layers className="size-5 text-ifsc-red" aria-hidden />
+              <Layers className="size-5 text-primary" aria-hidden />
               {due} cartão(ões) aguardando revisão.
             </span>
             <Button size="sm" onClick={() => go("flashcards")}>

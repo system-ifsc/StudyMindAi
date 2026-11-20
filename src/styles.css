@@ -80,9 +80,9 @@
 
 :root {
   --app-font: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --theme-hue: 293;
-  --theme-primary-light: oklch(0.56 0.24 var(--theme-hue));
-  --theme-primary-dark: oklch(0.8 0.16 var(--theme-hue));
+  --theme-hue: 145;
+  --theme-primary-light: oklch(0.45 0.135 var(--theme-hue));
+  --theme-primary-dark: oklch(0.78 0.16 var(--theme-hue));
   --radius: 1.125rem;
   --background: oklch(0.975 0.006 var(--theme-hue));
   --foreground: oklch(0.235 0.018 var(--theme-hue));

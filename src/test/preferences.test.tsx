@@ -28,7 +28,7 @@ describe("configurações com revisão", () => {
     expect(document.documentElement.dataset["color"]).toBe("rose");
     expect(localStorage.getItem("studymind-preferences")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Descartar" }));
-    expect(document.documentElement.dataset["color"]).toBe("violet");
+    expect(document.documentElement.dataset["color"]).toBe("green");
     fireEvent.click(screen.getByRole("button", { name: "Azul" }));
     fireEvent.click(screen.getByRole("button", { name: "Revisar" }));
     expect(screen.getByRole("dialog")).toHaveTextContent("Cor do tema");
@@ -106,6 +106,16 @@ it("respeita o som salvo quando a chave antiga ainda não existe", () => {
     JSON.stringify({ ...defaultPreferences, sound: false }),
   );
   expect(readPreferences().sound).toBe(false);
+});
+
+it("inicia em verde sem preferências salvas e respeita uma paleta salva", () => {
+  new Function(preferencesInitScript)();
+  expect(document.documentElement.dataset["color"]).toBe("green");
+  expect(readPreferences().color).toBe("green");
+  localStorage.setItem("studymind-preferences", JSON.stringify({ color: "violet" }));
+  new Function(preferencesInitScript)();
+  expect(document.documentElement.dataset["color"]).toBe("violet");
+  expect(readPreferences().color).toBe("violet");
 });
 
 it("aplica os mesmos padrões na abertura e na leitura de preferências corrompidas", () => {

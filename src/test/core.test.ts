@@ -773,6 +773,10 @@ describe("posicionamento do tutorial", () => {
 import { parsePreferences, preferenceChanges, defaultPreferences } from "@/lib/core/preferences";
 
 describe("preferências da interface", () => {
+  it("começa em verde e preserva uma cor escolhida anteriormente", () => {
+    expect(parsePreferences({}).color).toBe("green");
+    expect(parsePreferences({ color: "violet" }).color).toBe("violet");
+  });
   it("recupera configurações inválidas sem aplicar valores arbitrários", () => {
     expect(parsePreferences({ color: "invalid", font: "invalid" })).toEqual(defaultPreferences);
     expect(parsePreferences(null)).toEqual(defaultPreferences);

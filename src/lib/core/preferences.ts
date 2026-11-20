@@ -7,7 +7,7 @@ export const preferenceOptions = {
 } as const;
 
 export const preferenceSchema = z.object({
-  color: z.enum(preferenceOptions.color).default("violet"),
+  color: z.enum(preferenceOptions.color).default("green"),
   font: z.enum(preferenceOptions.font).default("manrope"),
   shape: z.enum(preferenceOptions.shape).default("rounded"),
   sound: z.boolean().default(true),

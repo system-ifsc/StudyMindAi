@@ -705,3 +705,28 @@ describe("feedback", () => {
     }
   });
 });
+
+// O cadastro do perfil e o passeio têm conclusões independentes.
+describe("elegibilidade do tutorial", () => {
+  it("exige perfil pronto e conta real, respeitando conclusão e perfis antigos", async () => {
+    const { shouldShowTutorial } = await import("@/lib/core/tutorial");
+    const { profileSchema } = await import("@/lib/core/local-validation");
+    const profile = profileSchema.parse({
+      id: "00000000-0000-4000-8000-000000000001",
+      display_name: "Ana",
+      course: "",
+      objective: "",
+      weekly_hours: 8,
+      availability: [60, 60, 60, 60, 60, 0, 0],
+      onboarded: true,
+    });
+    expect(shouldShowTutorial(undefined, "real")).toBe(false);
+    expect(shouldShowTutorial(profile, "real")).toBe(true);
+    expect(shouldShowTutorial({ ...profile, onboarded: false }, "real")).toBe(false);
+    expect(shouldShowTutorial({ ...profile, tutorial_completed: true }, "real")).toBe(false);
+    expect(shouldShowTutorial(profile, "demo")).toBe(false);
+    expect(profileSchema.parse({ ...profile, tutorial_completed: true }).tutorial_completed).toBe(
+      true,
+    );
+  });
+});

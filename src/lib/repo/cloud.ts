@@ -40,8 +40,8 @@ export function createCloudRepo(userId: string, client: SupabaseClient<Database>
     },
     async updateProfile(patch) {
       if (patch.course !== undefined) patch = { ...patch, course: requireCourse(patch.course) };
-      const { error } = await client
-        .from("profiles")
+      // A migração do tutorial estende o perfil sem editar os tipos gerados.
+      const { error } = await from("profiles")
         .update({ ...patch, updated_at: new Date().toISOString() })
         .eq("id", userId);
       fail(error, "salvar o perfil");

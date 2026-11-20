@@ -1,4 +1,5 @@
 import { BackLink } from "@/components/navigation/BackLink";
+import { TutorialProvider } from "./WelcomeTutorial";
 import { Suspense } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Loading } from "./ui";
@@ -56,6 +57,7 @@ function MobileNavigation({ mode, current }: { mode: Mode; current: string }) {
           params={{ section: tab.key }}
           aria-current={selected === tab.key ? "page" : undefined}
           className="dock-item"
+          data-tour={tab.key}
         >
           <span className="dock-icon">
             <tab.icon className="size-5" aria-hidden />
@@ -67,6 +69,7 @@ function MobileNavigation({ mode, current }: { mode: Mode; current: string }) {
         type="button"
         className="dock-item"
         onClick={() => setOpenMobile(true)}
+        data-tour="more"
         aria-label="Mais opções"
         aria-expanded={openMobile}
         data-active={!tabs.some((tab) => tab.key === selected) || undefined}
@@ -104,6 +107,7 @@ function Nav({ mode, current }: { mode: Mode; current: string }) {
                   >
                     <Link
                       to={mode === "demo" ? "/demo/$section" : "/app/$section"}
+                      data-tour={s.key}
                       params={{ section: s.key }}
                       onClick={() => setOpenMobile(false)}
                       aria-current={current === s.key ? "page" : undefined}
@@ -136,125 +140,129 @@ export function AppShell({ mode, section }: { mode: Mode; section: string }) {
 
   return (
     <SidebarProvider>
-      <div className="study-app flex min-h-svh w-full min-w-0">
-        <Sidebar collapsible="icon" className="border-r-0">
-          <SidebarHeader className="p-4 pb-3">
-            <Logo to={mode === "demo" ? "/" : "/app/painel"} />
-          </SidebarHeader>
-          <SidebarContent>
-            <Nav mode={mode} current={sec.key} />
-          </SidebarContent>
-          <SidebarFooter className="p-3">
-            <div className="flex items-center gap-2 rounded-xl bg-sidebar-accent p-2 group-data-[collapsible=icon]:hidden">
-              <span
-                className="grid size-8 place-items-center rounded-full bg-brand text-xs font-semibold text-primary-foreground"
-                aria-hidden
-              >
-                {name.slice(0, 2).toUpperCase()}
-              </span>
-              <div className="min-w-0 flex-1 text-sm">
-                <p className="truncate font-medium">{name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {mode === "demo" ? "Demonstração" : profile.data?.course || "Espaço pessoal"}
-                </p>
+      <TutorialProvider mode={mode} section={section} revealSection={go}>
+        <div className="study-app flex min-h-svh w-full min-w-0">
+          <Sidebar collapsible="icon" className="border-r-0">
+            <SidebarHeader className="p-4 pb-3">
+              <Logo to={mode === "demo" ? "/" : "/app/painel"} />
+            </SidebarHeader>
+            <SidebarContent>
+              <Nav mode={mode} current={sec.key} />
+            </SidebarContent>
+            <SidebarFooter className="p-3">
+              <div className="flex items-center gap-2 rounded-xl bg-sidebar-accent p-2 group-data-[collapsible=icon]:hidden">
+                <span
+                  className="grid size-8 place-items-center rounded-full bg-brand text-xs font-semibold text-primary-foreground"
+                  aria-hidden
+                >
+                  {name.slice(0, 2).toUpperCase()}
+                </span>
+                <div className="min-w-0 flex-1 text-sm">
+                  <p className="truncate font-medium">{name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {mode === "demo" ? "Demonstração" : profile.data?.course || "Espaço pessoal"}
+                  </p>
+                </div>
+                {mode === "real" && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Sair"
+                    onClick={async () => {
+                      await auth.signOut();
+                      navigate({ to: "/login" });
+                    }}
+                  >
+                    <LogOut className="size-4" />
+                  </Button>
+                )}
               </div>
-              {mode === "real" && (
+            </SidebarFooter>
+          </Sidebar>
+          <SidebarInset className="min-w-0 bg-transparent">
+            {mode === "demo" && (
+              <div
+                role="note"
+                className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-brand px-4 py-2 text-center text-sm text-primary-foreground"
+              >
+                <FlaskConical className="size-4" aria-hidden /> <strong>Modo demonstração</strong> —
+                dados fictícios, nada é salvo e tudo some ao recarregar.
+                <Link to="/cadastro" className="underline underline-offset-2">
+                  Criar conta real
+                </Link>
+              </div>
+            )}
+            <header className="app-topbar sticky top-0 z-10 flex h-20 items-center gap-3 px-5 sm:px-6">
+              <SidebarTrigger aria-label="Abrir ou recolher menu" />
+              <nav aria-label="Trilha" className="min-w-0 flex-1 truncate text-sm">
+                <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  Seu espaço de estudo
+                </span>
+                <span className="mt-0.5 block text-base font-bold text-foreground">
+                  {sec.key === "painel" ? "StudyMind" : sec.label}
+                </span>
+              </nav>
+              <div className="ml-auto flex items-center gap-1">
                 <Button
                   size="icon"
                   variant="ghost"
-                  aria-label="Sair"
-                  onClick={async () => {
-                    await auth.signOut();
-                    navigate({ to: "/login" });
-                  }}
+                  onClick={toggle}
+                  aria-label={dark ? "Ativar tema claro" : "Ativar tema escuro"}
                 >
-                  <LogOut className="size-4" />
+                  {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
                 </Button>
-              )}
-            </div>
-          </SidebarFooter>
-        </Sidebar>
-        <SidebarInset className="min-w-0 bg-transparent">
-          {mode === "demo" && (
-            <div
-              role="note"
-              className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-brand px-4 py-2 text-center text-sm text-primary-foreground"
-            >
-              <FlaskConical className="size-4" aria-hidden /> <strong>Modo demonstração</strong> —
-              dados fictícios, nada é salvo e tudo some ao recarregar.
-              <Link to="/cadastro" className="underline underline-offset-2">
-                Criar conta real
-              </Link>
-            </div>
-          )}
-          <header className="app-topbar sticky top-0 z-10 flex h-20 items-center gap-3 px-5 sm:px-6">
-            <SidebarTrigger aria-label="Abrir ou recolher menu" />
-            <nav aria-label="Trilha" className="min-w-0 flex-1 truncate text-sm">
-              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                Seu espaço de estudo
-              </span>
-              <span className="mt-0.5 block text-base font-bold text-foreground">
-                {sec.key === "painel" ? "StudyMind" : sec.label}
-              </span>
-            </nav>
-            <div className="ml-auto flex items-center gap-1">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={toggle}
-                aria-label={dark ? "Ativar tema claro" : "Ativar tema escuro"}
-              >
-                {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-              </Button>
-              <Link
-                to={mode === "demo" ? "/demo/$section" : "/app/$section"}
-                params={{ section: "configuracoes" }}
-                aria-label="Meu perfil"
-                className="profile-avatar"
-              >
-                {name.slice(0, 1).toUpperCase()}
-              </Link>
-            </div>
-          </header>
-          <div
-            className="app-content mx-auto w-full min-w-0 max-w-7xl flex-1 p-5 sm:p-6 lg:p-10"
-            id="conteudo"
-          >
-            {sec.key !== "painel" && (
-              <div className="mb-4">
-                <BackLink
+                <Link
                   to={mode === "demo" ? "/demo/$section" : "/app/$section"}
-                  section="painel"
-                  label="Voltar ao painel"
-                />
+                  params={{ section: "configuracoes" }}
+                  data-tour="configuracoes"
+                  aria-label="Meu perfil"
+                  className="profile-avatar"
+                >
+                  {name.slice(0, 1).toUpperCase()}
+                </Link>
               </div>
-            )}
-            {["planejador", "atividades", "calendario"].includes(sec.key) && (
-              <nav aria-label="Planejamento integrado" className="mb-6 flex flex-wrap gap-2">
-                {[
-                  ["planejador", "Plano de estudos"],
-                  ["atividades", "Atividades"],
-                  ["calendario", "Calendário"],
-                ].map(([key, label]) => (
-                  <Link
-                    key={key}
+            </header>
+            <div
+              className="app-content mx-auto w-full min-w-0 max-w-7xl flex-1 p-5 sm:p-6 lg:p-10"
+              id="conteudo"
+            >
+              {sec.key !== "painel" && (
+                <div className="mb-4">
+                  <BackLink
                     to={mode === "demo" ? "/demo/$section" : "/app/$section"}
-                    params={{ section: key! }}
-                    aria-current={sec.key === key ? "page" : undefined}
-                    className={`rounded-xl border px-4 py-2 text-sm ${sec.key === key ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent"}`}
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </nav>
-            )}
-            <Suspense key={sec.key} fallback={<Loading />}>
-              <sec.Component go={go} />
-            </Suspense>
-          </div>
-        </SidebarInset>
-        <MobileNavigation mode={mode} current={sec.key} />
-      </div>
+                    section="painel"
+                    label="Voltar ao painel"
+                  />
+                </div>
+              )}
+              {["planejador", "atividades", "calendario"].includes(sec.key) && (
+                <nav aria-label="Planejamento integrado" className="mb-6 flex flex-wrap gap-2">
+                  {[
+                    ["planejador", "Plano de estudos"],
+                    ["atividades", "Atividades"],
+                    ["calendario", "Calendário"],
+                  ].map(([key, label]) => (
+                    <Link
+                      key={key}
+                      to={mode === "demo" ? "/demo/$section" : "/app/$section"}
+                      data-tour={key}
+                      params={{ section: key! }}
+                      aria-current={sec.key === key ? "page" : undefined}
+                      className={`rounded-xl border px-4 py-2 text-sm ${sec.key === key ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent"}`}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </nav>
+              )}
+              <Suspense key={sec.key} fallback={<Loading />}>
+                <sec.Component go={go} />
+              </Suspense>
+            </div>
+          </SidebarInset>
+          <MobileNavigation mode={mode} current={sec.key} />
+        </div>
+      </TutorialProvider>
     </SidebarProvider>
   );
 }

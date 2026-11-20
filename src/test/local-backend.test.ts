@@ -55,6 +55,14 @@ afterAll(() => {
 });
 
 describe("backend local real sem Supabase", () => {
+  it("persiste a conclusão do tutorial por conta após reabrir o SQLite", async () => {
+    const repo = createLocalRepo(ownerA);
+    await repo.updateProfile({ tutorial_completed: true });
+    closeLocalDatabase();
+    expect((await createLocalRepo(ownerA).getProfile()).tutorial_completed).toBe(true);
+    expect((await createLocalRepo(ownerB).getProfile()).tutorial_completed).not.toBe(true);
+  });
+
   it("cria conta, perfil e sessão privada sem registrar senha em texto", async () => {
     const stored = localDatabase()
       .prepare("SELECT password,recovery FROM users WHERE id=?")

@@ -13,7 +13,11 @@ const source = {
   excerpt: z.string().max(60000),
   page_number: z.number().int().positive().nullable(),
 };
-export const profileSchema = backupSchema.shape.profile.extend({ id, onboarded: z.boolean() });
+export const profileSchema = backupSchema.shape.profile.extend({
+  id,
+  onboarded: z.boolean(),
+  tutorial_completed: z.boolean().default(false),
+});
 export const rowSchemas: Record<TableName, z.ZodType> = {
   subjects: backupSchema.shape.subjects.element.extend({ created_at: stamp.optional() }),
   tasks: backupSchema.shape.tasks.element.extend({ created_at: stamp.optional() }),

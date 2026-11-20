@@ -10,6 +10,7 @@ export interface Profile {
   /** Minutos disponíveis por dia da semana, índice 0 = segunda … 6 = domingo. */
   availability: number[];
   onboarded: boolean;
+  tutorial_completed?: boolean;
 }
 
 export interface Subject {

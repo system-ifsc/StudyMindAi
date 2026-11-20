@@ -1,3 +1,4 @@
+import { useTutorial } from "@/components/app/WelcomeTutorial";
 import { availabilityError } from "@/lib/core/profile";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Download, Upload, Moon, Sun } from "lucide-react";
@@ -34,6 +35,7 @@ import { CourseSelect } from "@/components/app/CourseSelect";
 import { requireCourse } from "@/lib/core/courses";
 
 export function Settings() {
+  const restartTutorial = useTutorial();
   const repo = useRepo(),
     qc = useQueryClient(),
     profile = useProfile(),
@@ -167,6 +169,14 @@ export function Settings() {
           </form>
         </Panel>
       )}
+      <Panel title="Tutorial de boas-vindas">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Conheça os principais recursos e veja onde encontrá-los.
+        </p>
+        <Button variant="outline" onClick={restartTutorial}>
+          Refazer tutorial
+        </Button>
+      </Panel>
       <Panel title="Aparência">
         <Button variant="outline" onClick={toggle} aria-pressed={dark}>
           {dark ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}

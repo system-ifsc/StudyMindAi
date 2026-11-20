@@ -1,6 +1,6 @@
 import type React from "react";
 import type { ReactNode } from "react";
-import { AlertTriangle, Inbox, Loader2, Trash2 } from "lucide-react";
+import { AlertTriangle, Inbox, Loader2, Trash2, type LucideIcon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,12 +26,8 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="page-heading mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <div className="mb-3 flex items-center gap-2 text-eyebrow">
-          <span className="h-1.5 w-1.5 rounded-full bg-ifsc-red" aria-hidden />
-          StudyMind
-        </div>
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
         {description && <p className="mt-1.5 max-w-2xl text-muted-foreground">{description}</p>}
       </div>
@@ -53,7 +49,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "glass-panel surface-lift min-w-0 break-words rounded-2xl border bg-card p-5 shadow-card sm:p-6",
+        "glass-panel study-panel min-w-0 break-words rounded-2xl border bg-card p-5 shadow-card sm:p-6",
         className,
       )}
     >
@@ -157,11 +153,27 @@ export function ConfirmDelete({
 export function Spin() {
   return <Loader2 className="size-4 animate-spin" aria-hidden />;
 }
-export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
+export function Stat({
+  label,
+  value,
+  hint,
+  icon: Icon,
+}: {
+  label: string;
+  value: ReactNode;
+  hint?: string;
+  icon?: LucideIcon;
+}) {
   return (
-    <div className="surface-lift relative overflow-hidden rounded-2xl border bg-card p-5 shadow-card">
-      <span className="absolute inset-x-0 top-0 h-0.5 bg-brand" aria-hidden />
-      <p className="text-sm text-muted-foreground">{label}</p>
+    <div className="stat-card relative overflow-hidden rounded-2xl border bg-card p-5 shadow-card">
+      <div className="stat-heading">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        {Icon && (
+          <span className="stat-icon">
+            <Icon className="size-4" aria-hidden />
+          </span>
+        )}
+      </div>
       <p className="mt-2 font-display text-3xl font-semibold">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>

@@ -1,3 +1,5 @@
+import { useSceneMotion } from "@/hooks/use-scene-motion";
+import { useReveal } from "@/hooks/use-reveal";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ArrowRight, Brain, BookOpen, Check, Timer, Sparkles } from "lucide-react";
 import { auth } from "@/lib/auth/client";
@@ -22,9 +24,11 @@ export const Route = createFileRoute("/")({
 });
 
 function Welcome() {
+  const revealRef = useReveal();
+  const sceneRef = useSceneMotion();
   return (
     <main className="welcome-screen">
-      <div className="welcome-layout">
+      <div className="welcome-layout" ref={revealRef}>
         <div className="welcome-bubbles" aria-hidden>
           <span />
           <span />
@@ -37,8 +41,11 @@ function Welcome() {
           <span>
             StudyMind<span className="welcome-ai">AI</span>
           </span>
+          <Link to="/demo/$section" params={{ section: "painel" }} className="welcome-explore">
+            Explorar plataforma <ArrowRight className="size-4" aria-hidden />
+          </Link>
         </header>
-        <div className="welcome-scene" aria-hidden="true">
+        <div className="welcome-scene" ref={sceneRef} aria-hidden="true">
           <div className="welcome-scene-canvas">
             <div className="scene-particles">
               <i />
@@ -103,7 +110,7 @@ function Welcome() {
           </div>
         </div>
         <section className="welcome-copy" aria-labelledby="welcome-title">
-          <p className="welcome-eyebrow">APRENDA. PLANEJE. EVOLUA.</p>
+          <p className="welcome-eyebrow">SEU ESPAÇO PARA IR ALÉM</p>
           <h1 id="welcome-title">
             Cultive seu foco.
             <br />

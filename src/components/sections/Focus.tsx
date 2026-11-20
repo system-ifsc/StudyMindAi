@@ -128,17 +128,24 @@ export function Focus() {
         description="O tempo é calculado por horário real: pausar, trocar de aba ou recarregar a página não perde minutos."
       />
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <Panel className="flex flex-col items-center py-10 text-center">
+        <Panel className="focus-timer-panel flex flex-col items-center py-10 text-center">
           <p className="text-sm text-muted-foreground">
             {timer ? timer.label : "Pronto para começar"}
           </p>
-          <p
-            className="my-4 font-display text-6xl font-semibold tabular-nums min-[400px]:text-7xl sm:text-8xl"
-            aria-live="polite"
-            aria-label={`${mm} minutos e ${ss} segundos restantes`}
+          <div
+            className="focus-timer-display"
+            data-running={timer?.runningSince != null || undefined}
           >
-            {mm}:{ss}
-          </p>
+            <p
+              className="my-4 font-display text-6xl font-semibold tabular-nums min-[400px]:text-7xl sm:text-8xl"
+              aria-live="polite"
+              aria-label={`${mm} minutos e ${ss} segundos restantes`}
+            >
+              {mm}
+              <span className="timer-colon">:</span>
+              {ss}
+            </p>
+          </div>
           {timer && (
             <p className="mb-4 text-sm text-muted-foreground">
               Decorrido: {Math.floor(ms / 60000)} min {timer.runningSince ? "" : "· pausado"}

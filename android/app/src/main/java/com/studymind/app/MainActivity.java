@@ -6,7 +6,13 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -22,6 +28,7 @@ import android.widget.Toast;
 /** Android client for the existing same-origin TanStack/SQLite server. */
 public class MainActivity extends Activity {
     private static final int PICK_FILE = 10;
+    private static final int SHELL_COLOR = Color.rgb(15, 14, 20);
     private WebView web;
     private LinearLayout root;
     private Uri server;
@@ -29,11 +36,45 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setStatusBarColor(Color.rgb(15, 14, 20));
-        getWindow().setNavigationBarColor(Color.rgb(15, 14, 20));
-        getWindow().getDecorView().setSystemUiVisibility(0);
+        configureSystemBars();
         server = Uri.parse(BuildConfig.SERVER_ORIGIN);
         showApp(state);
+    }
+
+    private void configureSystemBars() {
+        Window window = getWindow();
+        window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(SHELL_COLOR));
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+                | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(Color.TRANSPARENT);
+        window.setNavigationBarColor(Color.TRANSPARENT);
+        if (Build.VERSION.SDK_INT >= 28) {
+            window.setNavigationBarDividerColor(Color.TRANSPARENT);
+            WindowManager.LayoutParams attributes = window.getAttributes();
+            attributes.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            window.setAttributes(attributes);
+        }
+        if (Build.VERSION.SDK_INT >= 29) {
+            window.setStatusBarContrastEnforced(false);
+            window.setNavigationBarContrastEnforced(false);
+        }
+        if (Build.VERSION.SDK_INT >= 30) {
+            window.setDecorFitsSystemWindows(false);
+            // PhoneWindow.getInsetsController() requires its decor to exist, including onCreate.
+            window.getDecorView();
+            WindowInsetsController controller = window.getInsetsController();
+            if (controller != null) {
+                controller.setSystemBarsAppearance(0,
+                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                        | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+            }
+        } else {
+            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        }
     }
 
     private int dp(int value) {
@@ -44,11 +85,17 @@ public class MainActivity extends Activity {
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         // Keep the area reserved for Android system bars continuous with the dark app shell.
-        root.setBackgroundColor(Color.rgb(15, 14, 20));
+        root.setBackgroundColor(SHELL_COLOR);
         root.setOnApplyWindowInsetsListener((view, insets) -> {
+            if (Build.VERSION.SDK_INT >= 30) {
+                android.graphics.Insets safe = insets.getInsets(WindowInsets.Type.systemBars()
+                        | WindowInsets.Type.displayCutout() | WindowInsets.Type.ime());
+                view.setPadding(safe.left, safe.top, safe.right, safe.bottom);
+                return WindowInsets.CONSUMED;
+            }
             view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
                     insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
-            return insets;
+            return insets.consumeSystemWindowInsets();
         });
         setContentView(root);
         root.requestApplyInsets();
@@ -65,6 +112,7 @@ public class MainActivity extends Activity {
     private void showApp(Bundle state) {
         layout();
         web = new WebView(this);
+        web.setBackgroundColor(SHELL_COLOR);
         root.addView(web, new LinearLayout.LayoutParams(-1, 0, 1));
         web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(true);
@@ -171,6 +219,7 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        configureSystemBars();
         if (web != null) web.onResume();
     }
 

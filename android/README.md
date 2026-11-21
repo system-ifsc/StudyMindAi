@@ -27,6 +27,10 @@ O APK fica em `app/build/outputs/apk/debug/app-debug.apk`. Para criar um Gradle 
 
 ## Escopo e validação no aparelho
 
+A versão 1.0.2 desenha o fundo do aplicativo atrás das barras de status e navegação, inclusive no Android 15, mantendo os controles afastados das barras e dos recortes de tela. A correção é nativa: atualizar o site não altera um APK instalado. Gere e instale o APK 1.0.2 (código de versão 3) para recebê-la; o APK 1.0.1 antigo não contém essa alteração.
+
+O teste instrumentado `SystemBarsTest` verifica a geometria da janela e os pixels das duas barras em uma captura de tela real do emulador. Execute `gradle -PstudyMindServerUrl=https://estudos.seudominio.com connectedDebugAndroidTest` com emulador ou aparelho conectado.
+
 - Login por e-mail/senha, telas existentes, navegação Voltar e seleção de arquivos usam a instalação web. Cookies de sessão permanecem privados no WebView.
 - Links de outras origens abrem em aplicativos externos. OAuth Google e recuperação por link externo não têm integração de retorno ao aplicativo nesta versão; use e-mail/senha e o código de recuperação do backend local.
 - HTTPS é obrigatório. Nenhuma chave de IA ou credencial de servidor deve entrar no projeto Android.

@@ -258,6 +258,8 @@ As variáveis opcionais de IA devem ser configuradas separadamente na hospedagem
 
 ## 📱 StudyMind no Android
 
+**[📥 Baixar APK 1.0.1 para Android](./StudyMind-1.0.1-debug.apk)** — versão de desenvolvimento com o ícone de cérebro. No GitHub, abra o arquivo e use **Download raw file** para baixar.
+
 O projeto inclui um **cliente Android híbrido com WebView**, compatível com Android 8 ou superior. Ele abre a instalação web em uma janela de aplicativo e usa as mesmas contas e dados do servidor.
 
 O APK depende de um **backend HTTPS acessível pelo aparelho**. Ele não executa Node, não mantém um banco independente no telefone e não oferece a interface completa offline.

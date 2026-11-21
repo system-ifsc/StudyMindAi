@@ -1,5 +1,5 @@
 <resources>
-    <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+    <style name="AppThemeBase" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:colorAccent">#087F5B</item>
         <item name="android:statusBarColor">#0F0E14</item>
@@ -8,4 +8,5 @@
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowBackground">#0F0E14</item>
     </style>
+    <style name="AppTheme" parent="AppThemeBase" />
 </resources>

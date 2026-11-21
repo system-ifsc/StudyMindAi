@@ -29,6 +29,8 @@ O APK fica em `app/build/outputs/apk/debug/app-debug.apk`. Para criar um Gradle 
 
 A versão 1.0.2 desenha o fundo do aplicativo atrás das barras de status e navegação, inclusive no Android 15, mantendo os controles afastados das barras e dos recortes de tela. A correção é nativa: atualizar o site não altera um APK instalado. Gere e instale o APK 1.0.2 (código de versão 3) para recebê-la; o APK 1.0.1 antigo não contém essa alteração.
 
+A abertura nativa do Android 12+ também usa fundo escuro, antes de o WebView carregar. O APK 1.0.2 disponibilizado aqui tem uma assinatura de desenvolvimento diferente do APK 1.0.1. Para substituir essa instalação antiga, remova-a antes de instalar a nova versão; isso apaga a sessão e o cache locais, mas não as contas e os dados armazenados no servidor. Não remova o app se precisar preservar dados locais ainda não sincronizados.
+
 O teste instrumentado `SystemBarsTest` verifica a geometria da janela e os pixels das duas barras em uma captura de tela real do emulador. Execute `gradle -PstudyMindServerUrl=https://estudos.seudominio.com connectedDebugAndroidTest` com emulador ou aparelho conectado.
 
 - Login por e-mail/senha, telas existentes, navegação Voltar e seleção de arquivos usam a instalação web. Cookies de sessão permanecem privados no WebView.

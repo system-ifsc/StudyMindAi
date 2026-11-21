@@ -35,6 +35,12 @@ public class SystemBarsTest {
                 assertEquals(0, appearance & (WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
                         | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS));
             }
+            if (Build.VERSION.SDK_INT >= 31) {
+                android.util.TypedValue splash = new android.util.TypedValue();
+                assertTrue(activity.getActivity().getTheme().resolveAttribute(
+                        android.R.attr.windowSplashScreenBackground, splash, true));
+                assertEquals("Native startup must not flash white", Color.rgb(15, 14, 20), splash.data);
+            }
         });
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
         // Wait for the compositor to present the updated window before sampling the screenshot.

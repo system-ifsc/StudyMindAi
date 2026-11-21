@@ -29,6 +29,9 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        getWindow().setStatusBarColor(Color.rgb(15, 14, 20));
+        getWindow().setNavigationBarColor(Color.rgb(15, 14, 20));
+        getWindow().getDecorView().setSystemUiVisibility(0);
         server = Uri.parse(BuildConfig.SERVER_ORIGIN);
         showApp(state);
     }
@@ -40,7 +43,8 @@ public class MainActivity extends Activity {
     private void layout() {
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.rgb(248, 250, 249));
+        // Keep the area reserved for Android system bars continuous with the dark app shell.
+        root.setBackgroundColor(Color.rgb(15, 14, 20));
         root.setOnApplyWindowInsetsListener((view, insets) -> {
             view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
                     insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());

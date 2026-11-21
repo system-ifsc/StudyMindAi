@@ -1,14 +1,65 @@
+<div align="center">
+
+<img src="./public/favicon.svg" width="88" height="88" alt="Logo do StudyMind AI" />
+
 # StudyMind AI
 
-Organização de estudos em português: disciplinas, atividades, planejamento determinístico, Pomodoro, flashcards, exercícios, materiais e tutor opcional. Aplicativo independente com React 19, TanStack Start, Vite, Tailwind e servidor Node. O backend padrão usa SQLite local; Supabase é opcional. Não exige conta em editor de aplicativos.
+### Seu espaço para organizar, praticar e evoluir nos estudos.
 
-## Instalar
+Disciplinas, prazos, foco, revisões e materiais em uma experiência integrada, em português — com inteligência artificial quando você precisar.
 
-O catálogo oferece somente **Informática para Internet**, **Agroecologia**, **Biotecnologia** e **Mecatrônica**. Escolha o curso no onboarding ou nas configurações; disciplinas sugeridas e exercícios fixos contemplam as quatro áreas. As sugestões não representam uma matriz curricular oficial. A demonstração começa em Informática e permite explorar os demais cursos nas configurações e no filtro de exercícios.
+![React 19](https://img.shields.io/badge/React-19-149ECA?style=flat-square&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![TanStack Start](https://img.shields.io/badge/TanStack-Start-FF4154?style=flat-square)
+![SQLite](https://img.shields.io/badge/SQLite-persistente-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-22.13%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white)
 
-Para a versão Android (APK), veja o [projeto Android](./android/README.md), com configuração do servidor e geração pelo GitHub Actions ou SDK local.
+[Recursos](#-uma-rotina-de-estudos-conectada) · [Começar](#-comece-em-poucos-passos) · [Arquitetura](#-por-dentro-do-projeto) · [Hospedagem](#-coloque-no-ar) · [Android](#-studymind-no-android)
 
-Requer Node 22.13+ e npm. Não precisa de Supabase, Docker ou serviços externos para criar conta e salvar estudos.
+</div>
+
+---
+
+## 🌱 Aprender com mais organização
+
+O **StudyMind AI** reúne as etapas da rotina de estudos: entender o que precisa ser feito, reservar tempo, estudar com foco e revisar o aprendizado. Em vez de espalhar atividades, arquivos e anotações entre várias ferramentas, o estudante acompanha tudo em um único ambiente.
+
+A aplicação tem interface responsiva, modos claro e escuro e preferências de aparência. Funciona com **servidor próprio e SQLite persistente por padrão**, sem depender de Supabase ou de um provedor de IA para cadastrar uma conta e salvar os estudos. Supabase é uma alternativa para autenticação, banco e armazenamento.
+
+> **Planejamento é algoritmo; assistência é IA.** O planejador é determinístico e usa prazos, prioridades e disponibilidade. O tutor e a geração de conteúdo dependem de um provedor configurado no servidor. Sem configuração, o aplicativo informa a indisponibilidade e não simula respostas.
+
+## ✨ Uma rotina de estudos conectada
+
+| Etapa                     | O que você encontra                                                                                                                         |
+| :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Organizar**             | Painel da rotina, disciplinas, atividades com prazo e prioridade, calendário e disponibilidade semanal.                                     |
+| **Planejar**              | Distribuição de atividades em blocos de estudo, indicação do que não coube na agenda e planejamento adaptativo com evidências do histórico. |
+| **Manter o foco**         | Pomodoro, pausas e registro de sessões associado aos estudos.                                                                               |
+| **Revisar**               | Flashcards com repetição espaçada, em uma variação simplificada do SM-2, com avaliação de dificuldade.                                      |
+| **Praticar**              | Banco fixo de exercícios por curso, questionários, simulados e histórico de respostas.                                                      |
+| **Consultar materiais**   | Importação de TXT, Markdown, PDF, DOCX e PPTX, preservação do original e leitura do texto extraído.                                         |
+| **Estudar com IA**        | Tutor com contexto de materiais, resumos, tópicos principais, conceitos, guias de revisão, flashcards e questões geradas.                   |
+| **Acompanhar a evolução** | Metas, minutos estudados, sessões e indicadores de acerto por tópico.                                                                       |
+| **Cuidar dos dados**      | Exportação e importação de estudos, arquivos privados e recuperação de conta conforme o backend escolhido.                                  |
+
+### Materiais que viram prática
+
+Importe um material, consulte seu conteúdo e, com IA configurada, transforme-o em resumo, guia, flashcards, questionário ou simulado. As ferramentas incluem questões de múltipla escolha, verdadeiro ou falso e discursivas; a correção discursiva usa o provedor de IA.
+
+- **TXT e Markdown:** até 1 MB por arquivo.
+- **PDF, DOCX e PPTX:** até 10 MB por arquivo.
+- **Texto extraído:** até 200 mil caracteres por material.
+- **PDF digitalizado:** OCR local em português e inglês, para até 20 páginas sem texto. O primeiro uso depende do download dos idiomas; a qualidade do reconhecimento varia com o documento.
+
+### Quatro áreas de formação
+
+O catálogo oferece **Informática para Internet**, **Agroecologia**, **Biotecnologia** e **Mecatrônica**, com sugestões de disciplinas e exercícios fixos relacionados a essas áreas. O curso é escolhido no onboarding e pode ser alterado nas configurações.
+
+As sugestões ajudam a começar; **não representam uma matriz curricular oficial**.
+
+## 🚀 Comece em poucos passos
+
+**Requisitos:** Node.js **22.13 ou superior** e npm.
 
 ```bash
 npm ci
@@ -16,124 +67,296 @@ npm run setup:check
 npm run dev
 ```
 
-Abra http://localhost:8080/cadastro, crie sua conta, guarde o código de recuperação e conclua o onboarding. O banco é criado automaticamente em `data/studymind.sqlite`. Dados e arquivos persistem após recarregar ou reiniciar o servidor. O modo `/demo/*` continua separado, apenas em memória.
+Acesse **http://localhost:8080/cadastro**, crie sua conta e conclua o onboarding. No modo local, guarde o **código privado de recuperação** exibido no cadastro: ele permite redefinir a senha sem envio de e-mail.
 
-## Backend local (padrão)
+O banco é criado automaticamente em `data/studymind.sqlite`. Os dados permanecem após recarregar a página ou reiniciar o servidor.
 
-Na ausência das variáveis do Supabase, o app seleciona SQLite. Para usar o modo local mesmo com variáveis antigas, defina `VITE_BACKEND=local` no `.env` e refaça o build. O arquivo [`.env.example`](./.env.example) já usa esse padrão. Cliente e servidor precisam usar o mesmo modo; não se alterna de backend após uma falha de rede.
-
-- Cadastro e login com e-mail/senha, sessão em cookie HttpOnly, senha com scrypt e Bearer curto para a API de IA.
-- Recuperação sem e-mail: o código privado exibido no cadastro redefine a senha, invalida as sessões e é substituído por um novo código. Guarde-o; não há envio fictício de e-mails.
-- Perfil, disciplinas, atividades, sessões, cartões, metas, materiais, conversas, simulados e arquivos privados passam pelo Repo e ficam no servidor, separados por usuário.
-- `LOCAL_DATA_DIR` altera a pasta de armazenamento (padrão `./data`). Ela contém dados privados e está fora do Git.
-- Para backup integral local, pare o servidor e copie a pasta de dados inteira para local seguro. O JSON v2 da interface inclui todos os estudos, conversas, simulados e arquivos originais, mas não contas/senhas. O snapshot administrativo inclui o backend local inteiro; veja [operação e recuperação](./docs/operacao-e-recuperacao.md).
-
-Para hospedar esse modo, use um servidor Node com disco/volume persistente, HTTPS e uma única instância compartilhando esse banco. Hospedagens com sistema de arquivos temporário ou apenas estático não preservam o SQLite. Não exponha a pasta de dados como diretório público. Se usar proxy reverso, configure `APP_ORIGIN` com a origem HTTPS pública quando a origem interna for diferente.
-
-Google depende de um provedor externo e fica oculto no modo local. Cadastro/login próprios funcionam sem Google.
-
-## Servidor compartilhado pelo site e Android
-
-A instalação com Docker Compose na raiz inclui o servidor Node, SQLite em volume persistente e HTTPS automático com Caddy. Em um servidor com Docker Compose, aponte o DNS do seu domínio para o servidor e libere as portas 80 e 443. Execute, substituindo o domínio:
+Para personalizar a configuração, copie o modelo de ambiente:
 
 ```bash
-STUDYMIND_DOMAIN=estudos.seudominio.com docker compose up -d --build
+cp .env.example .env
 ```
 
-Abra `https://estudos.seudominio.com/cadastro`. Gere o APK com `studyMindServerUrl=https://estudos.seudominio.com` ou informe essa mesma origem no workflow Android. Contas e estudos ficam no mesmo servidor; cada dispositivo entra com o mesmo e-mail e senha. O volume `study-data` preserva contas, arquivos e sessões após recriar o contêiner. Não execute `docker compose down -v`, pois esse comando apaga os volumes. Esta instalação cria um banco novo no volume; não importa automaticamente o banco de desenvolvimento existente.
+O [arquivo de exemplo](./.env.example) já seleciona o backend local. Não é necessário configurar serviços externos para começar.
 
-O contêiner não copia o arquivo `.env` nem credenciais locais. A IA é opcional e pode ser configurada por variáveis de ambiente apenas no serviço `app`. Antes de distribuir, valide também o APK em um aparelho Android; os testes mobile do Playwright cobrem o navegador, não o WebView nativo.
+**Quer explorar sem uma conta?** Com o servidor rodando, abra **http://localhost:8080/demo/painel**. A demonstração usa dados em memória, separados do banco real, e perde as alterações ao recarregar.
 
-## Supabase opcional: configurar cadastro e login
+## 🧭 Por dentro do projeto
 
-1. Defina `VITE_BACKEND=supabase` e crie um projeto no [painel Supabase](https://supabase.com/dashboard).
-2. Copie a URL e a chave **publishable** (ou anon pública) para `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` no arquivo `.env`. Configure `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` com os mesmos valores para o servidor. Nenhuma chave administrativa é necessária para cadastro/login.
-3. Copie a conexão PostgreSQL do painel **Connect** para `DATABASE_URL`. Se sua rede não tiver IPv6, use o pooler de sessão. A senha é a senha do banco, não a chave pública. Execute `npm run db:setup` para instalar tabelas, RLS, criação automática do perfil, Storage privado, backup e cotas de IA.
-4. Em **Authentication**, habilite cadastro e o provedor de e-mail/senha. Em **URL Configuration**, defina a Site URL e autorize `http://localhost:8080/auth/callback` e `http://localhost:8080/reset-password`. Na publicação, autorize as mesmas rotas no seu domínio HTTPS.
-5. Para confirmação e recuperação por e-mail em produção, configure SMTP próprio no Supabase. O envio padrão tem restrições e não substitui um serviço de e-mail de produção. Confira [a documentação de SMTP](https://supabase.com/docs/guides/auth/auth-smtp).
-6. Reinicie `npm run dev` após alterar o ambiente. Em produção, faça novo build após alterar variáveis `VITE_*`.
+O StudyMind combina uma interface React com rotas e servidor TanStack Start. As regras de negócio ficam separadas da interface, e o acesso aos dados passa por um contrato comum, o **Repo**.
 
-O cadastro chama Auth diretamente. Se a confirmação estiver habilitada, o usuário recebe um link; a rota `/auth/callback` valida a sessão e leva ao onboarding. Se o backend entregar uma sessão imediatamente, o cadastro abre o onboarding. A recuperação valida a sessão antes de permitir salvar a senha. É possível reenviar a confirmação pela tela de cadastro.
+```mermaid
+flowchart TD
+    UI[Interface React · TanStack Start] --> CORE[Regras puras: planejamento, SRS e métricas]
+    UI --> REPO[Contrato Repo]
+    REPO --> LOCAL[Backend local · SQLite]
+    REPO --> CLOUD[Backend opcional · Supabase]
+    REPO --> DEMO[Demonstração · memória]
+    UI --> API[API autenticada /api/assistant]
+    API --> AI[Provedor de IA configurado no servidor]
+```
 
-Google é opcional: configure suas credenciais no provedor Google do Supabase, autorize o callback do Supabase no Google Cloud e somente então defina `VITE_GOOGLE_AUTH_ENABLED=true`. O login usa `supabase.auth.signInWithOAuth`, sem intermediário.
+### Tecnologias
 
-`npm run setup:check` verifica presença das variáveis e acessibilidade do Auth sem imprimir valores secretos. Não cria contas nem confirma entrega de e-mails.
+| Camada                  | Tecnologias                                                           |
+| :---------------------- | :-------------------------------------------------------------------- |
+| Interface               | React 19, TypeScript, Tailwind CSS 4, Radix UI e Lucide               |
+| Aplicação e rotas       | TanStack Start, TanStack Router, TanStack Query e Vite 8              |
+| Servidor                | Node.js e Nitro                                                       |
+| Persistência padrão     | SQLite local no servidor                                              |
+| Backend opcional        | Supabase Auth, PostgreSQL com RLS e Storage privado                   |
+| Inteligência artificial | AI SDK e provedor compatível com Chat Completions                     |
+| Documentos              | PDF.js, Tesseract.js e extração de texto OOXML                        |
+| Validação e qualidade   | Zod, Vitest, Testing Library, PGlite, Playwright, ESLint e TypeScript |
+| Publicação independente | Docker Compose e Caddy com HTTPS                                      |
+| Android                 | Aplicativo híbrido com WebView                                        |
 
-## Banco e dados
+### Mapa do código
 
-As migrações PostgreSQL opcionais estão em [supabase/migrations](./supabase/migrations); o schema SQLite fica em [supabase/migrations/sqlite](./supabase/migrations/sqlite). No modo local, o banco é inicializado automaticamente ou por `npm run db:setup`. As instruções a seguir nesta seção sobre transações PostgreSQL aplicam-se ao modo Supabase. `npm run db:setup` aplica tudo em uma transação, registra checksums e pode ser repetido. Para proteger dados, recusa um banco com tabelas StudyMind preexistentes sem esse histórico. Não aplica SQL no backend antigo e não migra usuários automaticamente.
+```text
+src/
+├── components/
+│   ├── app/               # Estrutura do app, tutorial e conteúdo Markdown
+│   ├── sections/          # Telas de estudo, prática e conta
+│   └── ui/                # Componentes de interface
+├── lib/
+│   ├── core/              # Regras puras: planner, SRS, métricas e validações
+│   ├── repo/              # Contrato e adaptadores local, cloud e memória
+│   ├── local/             # Autenticação, API e banco locais
+│   ├── auth/              # Fluxos e integração de autenticação
+│   └── ai/                # Integração de IA exclusiva do servidor
+├── routes/                # Rotas públicas, autenticadas e APIs
+└── test/                  # Testes de regras, componentes e integrações
+android/                   # Cliente Android e instruções de build
+e2e/                       # Fluxos de navegador com Playwright
+supabase/migrations/       # Migrações SQL versionadas, incluindo SQLite
+scripts/                   # Setup, diagnóstico, backup e autorização Gmail
+docs/                      # Operação, avaliações e planejamento de entregas
+```
 
-O diretório [drizzle](./drizzle) contém apenas o histórico legado; não é a fonte para uma instalação nova. A transferência de contas existentes exige um plano próprio de exportação/importação de Auth e Storage. O backup JSON v2 recupera todos os dados de estudo e arquivos originais; v1 continua aceito. Nenhum JSON da interface transfere usuários ou senhas. A importação é aditiva e preserva referências com novos IDs. Veja [operação e recuperação](./docs/operacao-e-recuperacao.md).
+### Decisões que sustentam a aplicação
 
-Toda operação da interface passa pelo contrato Repo: SQLite ou Supabase para contas reais e memória para demonstração. As tabelas têm RLS; referências compostas impedem vínculos entre contas. Arquivos ficam no bucket privado `study-materials`. Sessões são idempotentes por `(user_id, client_id)`.
+- **Regras verificáveis:** planejamento, repetição espaçada e métricas são funções puras em [core](./src/lib/core), com testes em [core.test.ts](./src/test/core.test.ts). Mesmas entradas produzem o mesmo planejamento.
+- **Isolamento de dados:** toda operação de dados da interface usa o [Repo](./src/lib/repo). Contas reais usam SQLite ou Supabase; a demonstração usa memória.
+- **Sessões idempotentes:** cada sessão de estudo recebe um `client_id` no cliente e é registrada por upsert em `(user_id, client_id)`.
+- **IA no servidor:** as chamadas ficam em [ai](./src/lib/ai), através de `/api/assistant`, com verificação de Bearer e cotas de uso.
+- **Evolução do banco:** alterações de schema ficam em [migrações versionadas](./supabase/migrations), sem reescrever histórico aplicado ou apagar dados de produção.
 
-## Desenvolvimento com Supabase local
+## 🔐 Escolha onde seus dados ficam
 
-Também é possível usar Supabase local, com Docker e CLI Supabase atual (v2.108+ ou v3):
+|                | Local — padrão             | Supabase — opcional                           | Demonstração                           |
+| :------------- | :------------------------- | :-------------------------------------------- | :------------------------------------- |
+| Persistência   | SQLite no servidor         | PostgreSQL e Storage                          | Memória                                |
+| Acesso         | E-mail e senha próprios    | Supabase Auth; Google opcional                | Sem conta real                         |
+| Recuperação    | Código privado             | Fluxo de recuperação por e-mail               | Não se aplica                          |
+| Infraestrutura | Node com disco persistente | Projeto Supabase e servidor da aplicação      | A mesma aplicação, com Repo em memória |
+| Indicação      | Hospedagem independente    | Instalações que preferem serviços gerenciados | Explorar a interface                   |
+
+### Backend local
+
+Sem configuração Supabase, o aplicativo seleciona SQLite. Para fixar essa escolha, use:
+
+```dotenv
+VITE_BACKEND=local
+LOCAL_DATA_DIR=./data
+```
+
+A autenticação local usa cookie **HttpOnly**, senhas com **scrypt** e Bearer curto para acesso à API de IA. A recuperação de senha invalida as sessões e substitui o código de recuperação. Não há envio de e-mail nesse fluxo; o login Google fica oculto no modo local.
+
+Perfil, atividades, sessões, cartões, metas, materiais, conversas, simulados e arquivos privados são persistidos no servidor e separados por usuário. A pasta de dados deve permanecer privada e fora do Git.
+
+Cliente e servidor precisam usar o mesmo backend. A aplicação não troca de banco automaticamente quando ocorre uma falha de rede. Alterações em variáveis `VITE_*` exigem novo build em produção.
+
+<details>
+<summary><strong>Configurar Supabase</strong></summary>
+
+1. Crie um projeto no [painel Supabase](https://supabase.com/dashboard).
+2. No ambiente, defina `VITE_BACKEND=supabase`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`. Use a chave **publishable** ou anon pública. Configure também `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` com os mesmos valores para o servidor.
+3. Copie a conexão PostgreSQL do painel **Connect** para `DATABASE_URL`. Se a rede não tiver IPv6, use o pooler de sessão. Execute `npm run db:setup` para aplicar tabelas, RLS, Storage privado e demais migrações.
+4. Habilite cadastro e e-mail/senha em **Authentication**. Configure a Site URL e autorize as rotas `/auth/callback` e `/reset-password` na origem usada, incluindo `http://localhost:8080` em desenvolvimento.
+5. Configure [SMTP próprio](https://supabase.com/docs/guides/auth/auth-smtp) para confirmação e recuperação por e-mail em produção.
+6. Reinicie o servidor de desenvolvimento ou gere novo build na hospedagem.
+
+Com confirmação habilitada, o cadastro envia o link de confirmação; o callback valida a sessão e encaminha ao onboarding. Se Auth entregar uma sessão imediatamente, o cadastro abre o onboarding diretamente.
+
+**Google opcional:** configure o provedor Google no Supabase, autorize o callback do Supabase no Google Cloud e só então defina `VITE_GOOGLE_AUTH_ENABLED=true`.
+
+O setup PostgreSQL registra checksums, aplica as migrações em transação e pode ser repetido. Ele recusa tabelas StudyMind preexistentes sem seu histórico de migrações. O [histórico legado Drizzle](./drizzle) não é a fonte para uma instalação nova.
+
+**Supabase local:** com Docker e CLI atual (v2.108+ ou v3), execute:
 
 ```bash
 npx supabase start
 npx supabase status
 ```
 
-A CLI aplica as migrações e informa URL/chaves locais; coloque os valores no `.env`. Neste caminho não execute `db:setup`, pois a CLI gerencia seu próprio histórico. O servidor de e-mails de teste fica em http://localhost:54324 e permite validar confirmação e recuperação sem enviar mensagens reais. Veja [o guia oficial](https://supabase.com/docs/guides/auth/testing-auth-flows).
+Use a URL e as chaves informadas pela CLI. Nesse caminho, **não execute `db:setup`**, pois a CLI gerencia o histórico. O servidor de e-mails de teste fica em http://localhost:54324.
 
-## IA independente e opcional
+Contas SQLite não são transferidas automaticamente para Supabase. A transferência de autenticação e armazenamento exige um procedimento próprio.
 
-Escolha um provedor compatível com Chat Completions e configure apenas no servidor:
+</details>
 
-- `AI_BASE_URL`: endpoint do provedor, normalmente terminado em `/v1`.
-- `AI_MODEL`: identificador de um modelo disponível na sua conta.
-- `AI_API_KEY`: chave do provedor.
-- Somente no modo Supabase: `SUPABASE_SERVICE_ROLE_KEY`, usada pelas cotas no servidor. No modo local, as cotas ficam no SQLite e não precisam de chave administrativa.
-- `AI_DAILY_REQUEST_LIMIT` e `AI_MONTHLY_REQUEST_LIMIT`: inteiros positivos; mensal maior ou igual ao diário. No modo local, os padrões são 20 e 200.
+## 🤖 Assistência com IA, do seu jeito
 
-O tutor, a geração e a correção discursiva usam `/api/assistant` com Bearer verificado e cotas distribuídas. Sem essas configurações, o app avisa e não fabrica respostas. Cadastro, planejamento, estudo e banco fixo de exercícios funcionam sem IA. `GET /api/assistant` informa a configuração; não testa saldo ou acesso ao modelo.
+Escolha um provedor compatível com **Chat Completions** e configure no ambiente privado do servidor:
 
-## Testar e publicar
+```dotenv
+AI_BASE_URL=https://seu-provedor.example/v1
+AI_MODEL=identificador-do-modelo
+AI_API_KEY=sua-chave-privada
+AI_DAILY_REQUEST_LIMIT=20
+AI_MONTHLY_REQUEST_LIMIT=200
+```
+
+A URL e o modelo acima são exemplos: substitua pelos valores reais do provedor. As cotas devem ser inteiros positivos, com limite mensal maior ou igual ao diário. No backend local, 20 e 200 são os padrões.
+
+No modo Supabase, configure também `SUPABASE_SERVICE_ROLE_KEY` para as cotas no servidor. Essa chave administrativa não é necessária para cadastro/login e nunca deve ser exposta ao navegador.
+
+O assistente permite conversar com contexto de materiais e manter histórico. As ferramentas geram conteúdo de revisão e atividades a partir do material fornecido. **Revise as respostas geradas antes de usá-las como referência.**
+
+`GET /api/assistant` informa o estado da configuração; não valida saldo ou disponibilidade do modelo. Organização, planejamento, Pomodoro, flashcards manuais e exercícios fixos continuam disponíveis sem IA.
+
+> Nunca coloque chaves de IA, service-role ou credenciais Gmail em variáveis `VITE_*`: elas são públicas e entram no build do cliente.
+
+## ☁️ Coloque no ar
+
+### Servidor próprio com Docker e HTTPS
+
+O [Docker Compose](./compose.yaml) inclui servidor Node, SQLite em volume persistente e Caddy para HTTPS automático. Aponte o DNS do domínio para o servidor, libere as portas **80 e 443** e execute:
+
+```bash
+STUDYMIND_DOMAIN=estudos.seudominio.com docker compose up -d --build
+```
+
+Depois, acesse `https://estudos.seudominio.com/cadastro`.
+
+O volume `study-data` preserva contas, arquivos e sessões ao recriar o contêiner. **Não use `docker compose down -v` para uma parada comum:** a opção `-v` apaga os volumes. Essa instalação cria um banco novo; não importa o banco de desenvolvimento automaticamente.
+
+O contêiner não copia o ambiente privado local. Para habilitar IA ou feedback, configure as variáveis de servidor no serviço `app`.
+
+### Servidor Node
 
 ```bash
 npm run check
-npm run build
 npm start
 ```
 
-O build padrão gera `.output/server/index.mjs`, pronto para servidor Node. O Nitro também permite publicar em outros destinos, como Vercel, conforme [a documentação do TanStack](https://tanstack.com/start/latest/docs/framework/react/guide/hosting). Configure variáveis no provedor escolhido e os redirects de Auth no Supabase. O arquivo `.env` local não configura sua hospedagem. Sirva pelo processo Node ou adaptador de servidor; uma hospedagem apenas estática não executa a API.
+O comando `check` inclui o build, que gera `.output/server/index.mjs`. Também é possível gerar apenas com `npm run build`.
 
-### Publicar na Vercel
+Para SQLite, use **disco persistente e uma única instância da aplicação** compartilhando o banco. Se o proxy usar uma origem interna diferente da pública, configure `APP_ORIGIN` com a origem HTTPS pública. Não exponha a pasta de dados como conteúdo estático.
 
-O SQLite local exige disco persistente e não funciona como banco de contas nas Functions da Vercel. Uma instalação com `VITE_BACKEND=local` pode renderizar páginas, mas falhar ao cadastrar com “Não foi possível salvar os dados no servidor”. Mudar `LOCAL_DATA_DIR` para `/tmp` não resolve a persistência. O build na Vercel recusa essa configuração.
+### Vercel e outros ambientes sem disco persistente
 
-1. Crie ou use um projeto Supabase. Em Vercel → projeto → Settings → Environment Variables, configure `VITE_BACKEND=supabase`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` para Production (e Preview, se usado). Copie a URL e a chave **pública** do mesmo projeto Supabase. Nunca use uma chave secreta em `VITE_*`.
-2. Em um ambiente administrativo, configure `VITE_BACKEND=supabase` e `DATABASE_URL` no `.env` privado e execute `npm run db:setup`. Isso aplica as migrações versionadas sem apagar dados. A conexão administrativa não precisa ficar na Vercel para cadastro e login.
-3. No Supabase, habilite Email em Authentication → Providers. Configure Site URL como `https://studyminds.vercel.app` e autorize `https://studyminds.vercel.app/auth/callback` e `https://studyminds.vercel.app/reset-password`. Configure SMTP para os e-mails de confirmação e recuperação.
-4. Faça um novo deploy na Vercel: as variáveis `VITE_*` são incorporadas no build. Teste cadastro, confirmação, login e gravação de uma matéria no site e no aplicativo conectado ao mesmo domínio. O endpoint de saúde em modo Supabase informa `external-not-probed`; ele não substitui esses testes.
+Na Vercel, use **Supabase**. O build recusa o backend local nesse ambiente: SQLite em disco temporário, inclusive `/tmp`, não mantém as contas de forma persistente.
 
-Para os recursos de IA, configure também as variáveis de servidor descritas acima com o mesmo projeto Supabase. Contas do SQLite existente não são transferidas automaticamente para o Supabase. Para continuar com SQLite, use o servidor com volume persistente descrito na seção de hospedagem independente.
+1. Configure `VITE_BACKEND=supabase`, as variáveis públicas Supabase e suas correspondentes de servidor no ambiente da hospedagem.
+2. Aplique `npm run db:setup` em ambiente administrativo com `DATABASE_URL` privado.
+3. Configure no Supabase a Site URL, os redirects de confirmação/recuperação no domínio publicado e SMTP.
+4. Faça novo deploy e valide cadastro, confirmação, login e gravação de dados.
 
-## Limites
+As variáveis opcionais de IA devem ser configuradas separadamente na hospedagem. O ambiente local não configura o deploy. Outros destinos dependem do [adaptador de servidor compatível com TanStack Start](https://tanstack.com/start/latest/docs/framework/react/guide/hosting); hospedagem apenas estática não executa as APIs.
 
-OCR depende do download inicial dos idiomas e da qualidade do documento. Pomodoro fica no navegador até concluir. A demonstração perde seus dados ao recarregar. Backups v1 mantêm seu escopo antigo; novos backups são v2, com limite de 64 MB. Os testes PostgreSQL usam PGlite com schemas mínimos de Auth/Storage: validam SQL, RLS, relacionamentos, perfil e cotas, mas não substituem testar envio de e-mail e OAuth no backend real.
+## 📱 StudyMind no Android
 
-## Confiabilidade e operação
+O projeto inclui um **cliente Android híbrido com WebView**, compatível com Android 8 ou superior. Ele abre a instalação web em uma janela de aplicativo e usa as mesmas contas e dados do servidor.
 
-Há testes E2E de desktop/celular no CI, Markdown seguro e cópia de respostas, backup v2, snapshots consistentes do SQLite, saúde em `/api/health` e métricas autenticadas em `/api/monitoring`. Consulte [o guia de operação e recuperação](./docs/operacao-e-recuperacao.md) para executar os testes, aplicar a migração opcional do Supabase e ensaiar a restauração sem sobrescrever dados.
+O APK depende de um **backend HTTPS acessível pelo aparelho**. Ele não executa Node, não mantém um banco independente no telefone e não oferece a interface completa offline.
 
-## Feedback dos usuários
+Você pode gerar o APK pelo workflow **Android APK** no GitHub Actions ou pelo SDK local. Endereço do servidor, requisitos, comandos e limitações estão no [guia Android](./android/README.md).
 
-A aba **Conta → Feedback** pede nome, Gmail para contato, tipo e mensagem. O envio acontece pelo próprio app, por uma API autenticada, e só confirma sucesso depois que o Gmail aceita a mensagem. O registro é persistido no banco do servidor (SQLite local ou Supabase) antes do envio para evitar perda do texto; se o Gmail falhar, o app informa o erro e o feedback fica registrado para nova tentativa. Os registros ficam na tabela `app_feedback`, separados dos backups de estudos; snapshots completos do SQLite os incluem. No Supabase, aplique as migrações com `npm run db:setup` antes de usar. O Gmail informado é usado para resposta (`Reply-To`); o remetente é a conta autorizada do app. Não há redirecionamento para Gmail ou aplicativo de e-mail.
+O workflow gera um APK de desenvolvimento; publicação na Play Store requer assinatura release e validação própria. Testes de navegador móvel não substituem testes no WebView de um aparelho.
 
-A opção mais simples é SMTP com senha de app:
+## 🧪 Desenvolvimento e qualidade
 
-1. Na conta remetente, ative a verificação em duas etapas e acesse [Senhas de app](https://myaccount.google.com/apppasswords).
-2. Crie uma senha chamada **StudyMind** e configure `GMAIL_SENDER` e `GMAIL_APP_PASSWORD` somente no `.env` privado do servidor. Não use a senha normal da conta.
-3. Reinicie o servidor. O envio usa `smtp.gmail.com:465` com TLS e mantém o destinatário fixo. Na hospedagem, configure as mesmas variáveis privadas e reinicie o serviço.
+| Comando                     | Finalidade                                         |
+| :-------------------------- | :------------------------------------------------- |
+| `npm run dev`               | Iniciar o servidor de desenvolvimento              |
+| `npm run setup:check`       | Diagnosticar a configuração sem imprimir segredos  |
+| `npm run db:setup`          | Inicializar SQLite ou aplicar migrações PostgreSQL |
+| `npm run lint`              | Verificar o código com ESLint                      |
+| `npm run typecheck`         | Validar tipos da aplicação e dos testes E2E        |
+| `npm test`                  | Executar testes com Vitest                         |
+| `npm run test:watch`        | Executar testes em modo de acompanhamento          |
+| `npm run build`             | Gerar a aplicação para produção                    |
+| `npm run check`             | Executar lint, tipos, testes e build               |
+| `npm run test:e2e`          | Validar fluxos de navegador com Playwright         |
+| `npm start`                 | Iniciar o build de produção                        |
+| `npm run backup:local -- …` | Criar ou restaurar snapshots administrativos       |
 
-Se a conta não oferecer senhas de app, use OAuth como alternativa. SMTP tem prioridade quando a senha de app estiver configurada:
+Para preparar os testes de navegador:
 
-1. No Google Cloud, habilite a Gmail API e configure o consentimento OAuth do projeto.
-2. Crie um cliente OAuth do tipo **Aplicativo para computador** e baixe o JSON das credenciais para um local privado fora do repositório.
-3. Execute `npm run feedback:authorize -- /caminho/privado/client_secret.json`. Abra a URL exibida, entre na conta remetente e autorize somente `gmail.send`. O script grava as credenciais no `.env` ignorado pelo Git, sem exibi-las.
-4. Reinicie o servidor. Se estiver hospedado, transfira `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN` e `GMAIL_SENDER` para as variáveis privadas da hospedagem e faça novo deploy. O `.env` local não configura a hospedagem.
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
 
-O remetente configurado deve ser a conta autorizada. Para consentimento externo em modo **Testing**, tokens com esse escopo expiram em sete dias; configure o status de publicação apropriado antes do uso contínuo. Consulte a [documentação OAuth do Google](https://developers.google.com/identity/protocols/oauth2/web-server). O script de autorização não envia e-mails. O nome e o Gmail informados no formulário são incluídos na mensagem para permitir resposta. Nenhuma credencial Google é exposta no navegador; a demonstração não envia feedback.
+Os E2E usam build local, contas de teste e um banco separado. Se seu ambiente estiver em Supabase, gere antes o build com `VITE_BACKEND=local`. Os cenários cobrem Chromium desktop e emulação de celular.
+
+O [workflow de qualidade](./.github/workflows/quality.yml) executa lint, tipagem, testes, build e E2E, com relatórios em caso de falha. A suíte inclui regras de negócio, autenticação, isolamento, documentos, backup e integrações. Os testes PostgreSQL usam PGlite com schemas mínimos de Auth/Storage; envio real de e-mail, OAuth e serviços externos precisam de validação no ambiente publicado.
+
+## 💾 Backup e operação
+
+**Backup pela interface:** em Configurações, exporte um JSON v2 com perfil, dados de estudo, conversas, simulados e arquivos originais. O limite total é **64 MB**. A importação valida estrutura, referências e hashes, cria novos IDs e adiciona os dados à conta atual. **Reimportar cria cópias.** Backups v1 continuam aceitos; contas, senhas e sessões de acesso não fazem parte do JSON.
+
+**Snapshot administrativo local:** inclui o backend SQLite completo, com contas, hashes de senhas, sessões e binários. Guarde-o como arquivo privado.
+
+```bash
+npm run backup:local -- create ./backups/studymind.sqlite
+npm run backup:local -- restore ./backups/studymind.sqlite ./data-restaurada
+```
+
+A criação usa uma cópia consistente do SQLite e gera checksum. A restauração verifica integridade e exige uma pasta de destino que ainda não exista, preservando a instalação atual.
+
+**Saúde e métricas:** `/api/health` verifica a aplicação e, no modo local, a consulta ao SQLite. No modo Supabase, identifica o serviço externo como não sondado. `/api/monitoring` exige Bearer com `MONITORING_TOKEN`; `MONITORING_LOG_DIR` habilita logs JSONL com rotação. Os contadores são por processo.
+
+Consulte o [guia de operação e recuperação](./docs/operacao-e-recuperacao.md) para detalhes de restauração, monitoramento e limites transacionais do Storage no Supabase.
+
+<details>
+<summary><strong>💬 Configurar o envio de feedback</strong></summary>
+
+A seção **Conta → Feedback** recebe nome, Gmail de contato, tipo e mensagem. A API autenticada persiste o texto antes do envio e só confirma sucesso quando o Gmail aceita a mensagem. Se houver falha, informa o erro e mantém o registro. A demonstração não envia feedback real.
+
+O destino é fixo em `system.ifsc@gmail.com`. O endereço informado pelo usuário entra como `Reply-To`; o remetente é a conta autorizada do aplicativo. Os registros da tabela `app_feedback` ficam separados dos backups de estudos e entram nos snapshots completos do SQLite.
+
+**Opção SMTP:** ative a verificação em duas etapas na conta remetente, crie uma [senha de app](https://myaccount.google.com/apppasswords) e configure `GMAIL_SENDER` e `GMAIL_APP_PASSWORD` no servidor. Não use a senha normal da conta. O envio usa TLS em `smtp.gmail.com:465`.
+
+**Alternativa OAuth:** habilite Gmail API e consentimento no Google Cloud, crie um cliente do tipo Aplicativo para computador e mantenha o JSON de credenciais fora do repositório. Execute:
+
+```bash
+npm run feedback:authorize -- /caminho/privado/client_secret.json
+```
+
+Autorize a conta remetente com o escopo `gmail.send`. O script salva as credenciais no ambiente privado local sem exibi-las e não envia mensagens. Na hospedagem, configure `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN` e `GMAIL_SENDER`, depois reinicie o serviço.
+
+SMTP tem prioridade quando a senha de app está configurada. No OAuth externo em modo Testing, tokens com esse escopo expiram em sete dias; ajuste o status de publicação para uso contínuo. Consulte a [documentação OAuth do Google](https://developers.google.com/identity/protocols/oauth2/web-server).
+
+</details>
+
+## 📌 Limites atuais
+
+- O Pomodoro permanece no navegador até a conclusão; não é um serviço de execução em segundo plano.
+- O cache do navegador cobre assets públicos, sem oferecer operação completa offline ou armazenar páginas autenticadas e APIs.
+- Preferências de aparência ficam no navegador. Sons e vibração dependem do dispositivo; notificações push ainda não estão disponíveis.
+- OCR e geração de conteúdo dependem, respectivamente, da legibilidade do documento e da configuração do provedor de IA.
+- O cliente Android tem limitações para OAuth, retorno por links externos e downloads `blob:`, detalhadas no seu guia.
+- Mudar de SQLite para Supabase não transfere contas automaticamente; o backup de estudos não substitui a migração de autenticação.
+
+## 📚 Explore a documentação
+
+| Documento                                                         | Conteúdo                                                   |
+| :---------------------------------------------------------------- | :--------------------------------------------------------- |
+| [Operação e recuperação](./docs/operacao-e-recuperacao.md)        | Backup, restauração, monitoramento e validação operacional |
+| [Aplicativo Android](./android/README.md)                         | Geração do APK, servidor HTTPS e testes em dispositivo     |
+| [Modelo de ambiente](./.env.example)                              | Variáveis públicas e privadas disponíveis                  |
+| [Migrações SQL](./supabase/migrations)                            | Evolução versionada dos bancos                             |
+| [Roadmap de entregas](./docs/roadmap-delivery.md)                 | Planejamento e registro de entregas                        |
+| [Saúde do projeto](./docs/project-health.md)                      | Avaliação técnica registrada                               |
+| [Comparativo de funcionalidades](./docs/studyfetch-comparison.md) | Análise de recursos frente ao StudyFetch                   |
+
+---
+
+<div align="center">
+
+**StudyMind AI** · Organize sua rotina. Pratique com intenção. Acompanhe sua evolução.
+
+</div>

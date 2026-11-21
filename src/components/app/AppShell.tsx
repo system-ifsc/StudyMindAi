@@ -1,3 +1,4 @@
+import { StartupPending } from "@/components/brand/StartupScreen";
 import { useReveal } from "@/hooks/use-reveal";
 import { BackLink } from "@/components/navigation/BackLink";
 import { TutorialProvider } from "./WelcomeTutorial";
@@ -269,7 +270,13 @@ function AppShellContent({ mode, section }: { mode: Mode; section: string }) {
               </nav>
             )}
             <div key={sec.key} className="section-transition">
-              <Suspense fallback={<Loading />}>
+              <Suspense
+                fallback={
+                  <StartupPending>
+                    <Loading />
+                  </StartupPending>
+                }
+              >
                 <sec.Component go={go} />
               </Suspense>
             </div>

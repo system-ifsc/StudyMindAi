@@ -1,3 +1,4 @@
+import { StartupScreen } from "@/components/brand/StartupScreen";
 import { finishPasswordRecovery } from "@/lib/auth/recovery";
 import { redirectPasswordRecovery } from "@/lib/auth/recovery-routing";
 import { useMonitoring, reportClientError } from "@/hooks/use-monitoring";
@@ -133,7 +134,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript + preferencesInitScript }} />
       </head>
       <body>
-        {children}
+        <StartupScreen>{children}</StartupScreen>
         <Scripts />
       </body>
     </html>

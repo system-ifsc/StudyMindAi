@@ -20,6 +20,14 @@ Disciplinas, prazos, foco, revisões e materiais em uma experiência integrada, 
 
 ---
 
+## 🎬 Conheça o StudyMind AI em 42 segundos
+
+[![Assistir ao vídeo de apresentação do StudyMind AI](./video/capa.jpg)](./video/studymind-propaganda.mp4)
+
+**[▶ Assistir ao vídeo](./video/studymind-propaganda.mp4)** · [Roteiro e bastidores](./video/README.md)
+
+Menos dispersão. Mais direção. Veja como conectar planejamento, foco e revisão na sua rotina de estudos. Vídeo em HD, com textos em português e trilha instrumental, sem locução.
+
 ## 🌱 Aprender com mais organização
 
 O **StudyMind AI** reúne as etapas da rotina de estudos: entender o que precisa ser feito, reservar tempo, estudar com foco e revisar o aprendizado. Em vez de espalhar atividades, arquivos e anotações entre várias ferramentas, o estudante acompanha tudo em um único ambiente.

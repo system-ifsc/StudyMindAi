@@ -723,8 +723,14 @@
   min-height: 100svh;
   overflow: hidden;
   isolation: isolate;
-  color: #e3edfa;
-  background: radial-gradient(ellipse at 50% 42%, #15213a, #090e1c 55%, #060a13);
+  --startup-accent: oklch(0.78 0.16 var(--theme-hue, 145));
+  color: oklch(0.96 0.02 var(--theme-hue, 145));
+  background: radial-gradient(
+    ellipse at 50% 42%,
+    oklch(0.23 0.035 var(--theme-hue, 145)),
+    oklch(0.16 0.02 var(--theme-hue, 145)) 55%,
+    oklch(0.13 0.015 var(--theme-hue, 145))
+  );
   transition:
     opacity 800ms ease,
     visibility 800ms;
@@ -750,7 +756,7 @@
   width: var(--star-size);
   height: var(--star-size);
   border-radius: 50%;
-  background: #c3d7f0;
+  background: color-mix(in oklab, var(--startup-accent) 35%, white);
   opacity: 0.25;
   animation: startup-twinkle var(--star-duration) var(--star-delay) ease-in-out infinite;
 }
@@ -778,17 +784,17 @@
   width: 88px;
   height: 88px;
   border-radius: 28px;
-  background: linear-gradient(145deg, #28476b, #23334f);
-  border: 1px solid #a8c8ee25;
+  background: var(--gradient-brand);
+  border: 1px solid color-mix(in oklab, var(--startup-accent) 18%, transparent);
   box-shadow:
-    0 12px 40px -18px #70a6dc35,
+    0 12px 40px -18px color-mix(in oklab, var(--startup-accent) 20%, transparent),
     inset 0 1px 0 #ffffff15;
   animation: startup-float 6s ease-in-out infinite;
 }
 
 .startup-status {
   margin-top: 28px;
-  color: #a6b4c8;
+  color: oklch(0.75 0.02 var(--theme-hue, 145));
   font-size: 12px;
   line-height: 1.6;
 }
@@ -798,14 +804,14 @@
   margin: 20px auto 0;
   border-radius: 999px;
   overflow: hidden;
-  background: #b5d1f015;
+  background: color-mix(in oklab, var(--startup-accent) 10%, transparent);
 }
 .startup-track span {
   display: block;
   width: 45%;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, transparent, #9dbedc, transparent);
+  background: linear-gradient(90deg, transparent, var(--startup-accent), transparent);
   animation: startup-progress 2.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 @keyframes startup-arrive {

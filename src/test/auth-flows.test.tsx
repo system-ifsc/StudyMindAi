@@ -10,16 +10,28 @@ const mocks = vi.hoisted(() => ({
   resetPasswordForEmail: vi.fn(),
   resend: vi.fn(),
   recover: vi.fn(),
+  getSession: vi.fn(),
+  updateUser: vi.fn(),
+  signOut: vi.fn(),
+  onAuthStateChange: vi.fn(),
 }));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => mocks.navigate,
+  createFileRoute: () => (options: { component: () => ReactNode }) => options,
   Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
 }));
 vi.mock("@/lib/auth/client", () => ({ auth: mocks, recoverLocalPassword: mocks.recover }));
+import { finishPasswordRecovery } from "@/lib/auth/recovery";
+import { Route as CallbackRoute } from "@/routes/auth.callback";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { Route as ResetRoute } from "@/routes/reset-password";
+const ResetPage = (ResetRoute as unknown as { component: () => ReactNode }).component;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  finishPasswordRecovery();
+  window.history.replaceState(null, "", "/");
+  mocks.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
   vi.stubEnv("VITE_BACKEND", "supabase");
   vi.stubEnv("VITE_SUPABASE_URL", "https://example.supabase.co");
   vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "public-key");
@@ -136,6 +148,9 @@ it("recupera a senha local por código sem prometer envio de e-mail", async () =
     target: { value: "codigo-antigo" },
   });
   fireEvent.change(screen.getByLabelText("Nova senha"), { target: { value: "nova-senha-segura" } });
+  fireEvent.change(screen.getByLabelText("Confirmar nova senha"), {
+    target: { value: "nova-senha-segura" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "Redefinir senha" }));
   await screen.findByText("novo-codigo-privado");
   expect(mocks.recover).toHaveBeenCalledWith(
@@ -144,4 +159,88 @@ it("recupera a senha local por código sem prometer envio de e-mail", async () =
     "nova-senha-segura",
   );
   expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
+});
+
+describe("redefinição por link", () => {
+  it("permite solicitar outro link quando não há sessão", async () => {
+    mocks.getSession.mockResolvedValueOnce({ data: { session: null }, error: null });
+    render(<ResetPage />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("inválido ou expirou");
+    fireEvent.click(screen.getByRole("button", { name: "Solicitar novo link" }));
+    expect(screen.getByRole("button", { name: "Enviar link" })).toBeEnabled();
+  });
+  it("valida a confirmação antes de atualizar e confirma o sucesso", async () => {
+    mocks.getSession.mockResolvedValueOnce({
+      data: { session: { access_token: "test" } },
+      error: null,
+    });
+    mocks.updateUser.mockResolvedValueOnce({ error: null });
+    render(<ResetPage />);
+    fireEvent.change(await screen.findByLabelText("Nova senha"), {
+      target: { value: "nova-senha-segura" },
+    });
+    fireEvent.change(screen.getByLabelText("Confirmar nova senha"), {
+      target: { value: "outra-senha-segura" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar senha" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("não coincidem");
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("Confirmar nova senha"), {
+      target: { value: "nova-senha-segura" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar senha" }));
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Senha alterada e salva com sucesso",
+    );
+    expect(mocks.updateUser).toHaveBeenCalledWith({ password: "nova-senha-segura" });
+    mocks.signOut.mockResolvedValueOnce({ error: null });
+    fireEvent.click(screen.getByRole("button", { name: "Entrar com nova senha" }));
+    await waitFor(() =>
+      expect(mocks.navigate).toHaveBeenCalledWith({ to: "/login", replace: true }),
+    );
+    expect(mocks.signOut).toHaveBeenCalledOnce();
+  });
+});
+
+it("recusa link com erro mesmo quando existe uma sessão anterior", async () => {
+  window.history.replaceState(
+    null,
+    "",
+    "/reset-password#error=access_denied&error_code=otp_expired",
+  );
+  render(<ResetPage />);
+  expect(await screen.findByRole("alert")).toHaveTextContent("expirou ou já foi usado");
+  expect(mocks.getSession).not.toHaveBeenCalled();
+  expect(screen.queryByLabelText("Nova senha")).not.toBeInTheDocument();
+  expect(window.location.hash).toBe("");
+});
+
+it("não envia recuperação local se a confirmação divergir", async () => {
+  vi.stubEnv("VITE_BACKEND", "local");
+  render(<AuthCard mode="login" initialForgot />);
+  fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: "student@example.com" } });
+  fireEvent.change(screen.getByLabelText("Código de recuperação"), {
+    target: { value: "codigo-antigo" },
+  });
+  fireEvent.change(screen.getByLabelText("Nova senha"), { target: { value: "nova-senha-segura" } });
+  fireEvent.change(screen.getByLabelText("Confirmar nova senha"), {
+    target: { value: "outra-senha-segura" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Redefinir senha" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("não coincidem");
+  expect(mocks.recover).not.toHaveBeenCalled();
+});
+
+it("callback de recuperação não abre o painel como um login comum", async () => {
+  window.history.replaceState(null, "", "/auth/callback#type=recovery&access_token=test");
+  mocks.getSession.mockResolvedValueOnce({
+    data: { session: { access_token: "test" } },
+    error: null,
+  });
+  const CallbackPage = (CallbackRoute as unknown as { component: () => ReactNode }).component;
+  render(<CallbackPage />);
+  await waitFor(() =>
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: "/reset-password", replace: true }),
+  );
+  expect(mocks.navigate).not.toHaveBeenCalledWith(expect.objectContaining({ to: "/app/$section" }));
 });

@@ -1,3 +1,5 @@
+import { redirectPasswordRecovery } from "@/lib/auth/recovery-routing";
+import { capturePasswordRecovery } from "@/lib/auth/recovery";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/auth/client";
@@ -5,6 +7,7 @@ import { isAuthConfigured, authUnavailableMessage } from "@/lib/auth-config";
 
 export const Route = createFileRoute("/auth/callback")({
   ssr: false,
+  beforeLoad: ({ location }) => redirectPasswordRecovery(location.pathname),
   head: () => ({ meta: [{ title: "Confirmar acesso — StudyMind AI" }] }),
   component: AuthCallback,
 });
@@ -16,6 +19,7 @@ function AuthCallback() {
     let active = true;
     async function confirm() {
       if (!isAuthConfigured()) throw new Error(authUnavailableMessage);
+      const recovery = capturePasswordRecovery();
       const query = new URLSearchParams(window.location.search);
       const fragment = new URLSearchParams(window.location.hash.slice(1));
       if (query.has("error") || fragment.has("error"))
@@ -27,6 +31,10 @@ function AuthCallback() {
         throw new Error(
           "Não foi possível confirmar o acesso. Abra o link completo do e-mail ou entre na sua conta.",
         );
+      if (recovery) {
+        if (active) await navigate({ to: "/reset-password", replace: true });
+        return;
+      }
       window.history.replaceState(null, "", "/auth/callback");
       if (active)
         await navigate({ to: "/app/$section", params: { section: "painel" }, replace: true });

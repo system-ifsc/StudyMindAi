@@ -14,7 +14,7 @@ import {
   LockKeyhole,
 } from "lucide-react";
 import { auth, recoverLocalPassword } from "@/lib/auth/client";
-import { authErrorMessage } from "@/lib/core/auth-errors";
+import { authErrorMessage, passwordResetError } from "@/lib/core/auth-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,7 +61,7 @@ export function AuthCard({
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (mode === "cadastro" && recoveryCode) return;
+    if (busy || (mode === "cadastro" && recoveryCode)) return;
     if (!isAuthConfigured()) return setError(authUnavailableMessage);
     const f = new FormData(e.currentTarget);
     const email = String(f.get("email") || "").trim();
@@ -72,6 +72,8 @@ export function AuthCard({
     try {
       if (forgot) {
         if (local) {
+          const validation = passwordResetError(password, String(f.get("confirmation") || ""));
+          if (validation) throw new Error(validation);
           const result = await recoverLocalPassword(
             email,
             String(f.get("recovery") || "").trim(),
@@ -337,7 +339,18 @@ export function AuthCard({
             {forgot && local && (
               <div className="space-y-1.5">
                 <Label htmlFor="recovery">Código de recuperação</Label>
-                <Input id="recovery" name="recovery" autoComplete="off" required maxLength={128} />
+                <Input
+                  id="recovery"
+                  name="recovery"
+                  autoComplete="off"
+                  required
+                  maxLength={128}
+                  aria-describedby="recovery-hint"
+                />
+                <p id="recovery-hint" className="text-xs text-muted-foreground">
+                  Use o código guardado ao criar sua conta. Ele será substituído após a redefinição.
+                  Sem esse código, não é possível recuperar a senha no modo local.
+                </p>
               </div>
             )}
             {(!forgot || local) && (
@@ -386,6 +399,27 @@ export function AuthCard({
                   </p>
                 )}
               </div>
+            )}
+            {forgot && local && (
+              <div className="space-y-1.5">
+                <Label htmlFor="confirmation">Confirmar nova senha</Label>
+                <Input
+                  id="confirmation"
+                  name="confirmation"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Mínimo de 8 caracteres. Digite a mesma senha nos dois campos.
+                </p>
+              </div>
+            )}
+            {forgot && !local && (
+              <p className="text-xs text-muted-foreground">
+                Confira também o spam. Se pedir outro link, use o e-mail mais recente.
+              </p>
             )}
             {error && (
               <p

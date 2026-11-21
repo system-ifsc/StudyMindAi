@@ -1,3 +1,5 @@
+import { finishPasswordRecovery } from "@/lib/auth/recovery";
+import { redirectPasswordRecovery } from "@/lib/auth/recovery-routing";
 import { useMonitoring, reportClientError } from "@/hooks/use-monitoring";
 import { isAuthConfigured } from "@/lib/auth-config";
 import { InteractionFeedback } from "@/components/feedback/InteractionFeedback";
@@ -80,6 +82,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  beforeLoad: ({ location }) => redirectPasswordRecovery(location.pathname),
   head: () => ({
     // Replace these placeholders with the app's name and description when first building the app.
     // Each content route, / included, must still set its own head(). Never add og:image or
@@ -144,6 +147,14 @@ function RootComponent() {
   useEffect(() => {
     if (!isAuthConfigured()) return;
     const { data } = auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") finishPasswordRecovery();
+      if (event === "PASSWORD_RECOVERY") {
+        // Defer navigation until the auth callback releases its lock.
+        setTimeout(() => {
+          void router.navigate({ to: "/reset-password", replace: true });
+        }, 0);
+        return;
+      }
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();

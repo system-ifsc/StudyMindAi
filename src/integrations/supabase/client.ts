@@ -1,3 +1,4 @@
+import { capturePasswordRecovery } from "@/lib/auth/recovery";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { isCloudConfigured } from "@/lib/auth-config";
@@ -5,6 +6,7 @@ import { isCloudConfigured } from "@/lib/auth-config";
 function createSupabaseClient() {
   if (!isCloudConfigured())
     throw new Error("Configure VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY para conectar seu Supabase.");
+  capturePasswordRecovery();
   return createClient<Database>(
     import.meta.env["VITE_SUPABASE_URL"],
     import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"],

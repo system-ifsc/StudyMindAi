@@ -1,6 +1,7 @@
+import { isPasswordRecoveryLink } from "@/lib/core/password-recovery";
 import { buildAdaptivePlan } from "@/lib/core/adaptive-plan";
 import { assistantProviderError } from "@/lib/core/assistant";
-import { authErrorMessage } from "@/lib/core/auth-errors";
+import { authErrorMessage, passwordResetError } from "@/lib/core/auth-errors";
 import { describe, expect, it } from "vitest";
 
 describe("erros de autenticação", () => {
@@ -798,5 +799,27 @@ describe("preferências da interface", () => {
     ]);
     expect(preferenceChanges(saved, { ...saved })).toEqual([]);
     expect(saved).toEqual(defaultPreferences);
+  });
+});
+
+describe("validação de redefinição de senha", () => {
+  it("exige comprimento mínimo e confirmação idêntica", () => {
+    expect(passwordResetError("curta", "curta")).toContain("8 caracteres");
+    expect(passwordResetError("senha-segura", "outra-senha")).toContain("não coincidem");
+    expect(passwordResetError("senha-segura", "senha-segura")).toBeNull();
+  });
+  it("explica links expirados e reutilização da senha", () => {
+    expect(authErrorMessage({ code: "otp_expired" })).toContain("Solicite um novo link");
+    expect(authErrorMessage({ code: "same_password" })).toContain("diferente");
+  });
+});
+
+describe("identificação do link de recuperação", () => {
+  it("identifica recovery na consulta ou fragmento sem confundir outros acessos", () => {
+    expect(isPasswordRecoveryLink("", "#access_token=token&type=recovery")).toBe(true);
+    expect(isPasswordRecoveryLink("?type=recovery", "")).toBe(true);
+    expect(isPasswordRecoveryLink("", "#type=signup")).toBe(false);
+    expect(isPasswordRecoveryLink("?next=recovery", "#access_token=token")).toBe(false);
+    expect(isPasswordRecoveryLink("", "")).toBe(false);
   });
 });

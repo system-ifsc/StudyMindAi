@@ -3,8 +3,8 @@
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
     <!-- Lucide Brain, matching the web logo; centered inside the adaptive icon safe zone. -->
-    <group android:scaleX="2.4" android:scaleY="2.4"
-        android:translateX="25.2" android:translateY="25.2">
+    <group android:scaleX="2.7" android:scaleY="2.7"
+        android:translateX="21.6" android:translateY="21.6">
         <path android:fillColor="@android:color/transparent"
             android:strokeColor="#15251B" android:strokeWidth="1.8"
             android:strokeLineCap="round" android:strokeLineJoin="round"

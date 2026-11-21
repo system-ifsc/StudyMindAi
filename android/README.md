@@ -4,6 +4,12 @@ Aplicativo Android híbrido com WebView, sem barra de navegador, tela de endere�
 
 O servidor continua executando TanStack Start, autenticação, Repo, SQLite e IA opcional. O APK não executa Node nem contém um banco SQLite independente no celular. Sem servidor publicado, não há acesso às contas reais. `localhost` no telefone não aponta para seu computador. Publique seguindo o [README principal](../README.md#backend-local-padrão), com volume persistente e HTTPS.
 
+## Ícone instalado
+
+O APK inclui o cérebro da identidade StudyMind, em traço escuro sobre fundo verde. O ícone é empacotado no aplicativo e aparece no launcher após a instalação, sem depender do carregamento do site. Há recursos adaptativos para Android 8+, ícone redondo e camada monocromática para ícones temáticos no Android 13+; nesse último caso, o sistema escolhe as cores.
+
+Mudanças no ícone exigem gerar e instalar um novo APK. Atualizar somente o site não altera o ícone de um aplicativo já instalado. Para atualizar sem remover o app, use um APK com a mesma assinatura e código de versão superior.
+
 ## Gerar APK no GitHub
 
 Envie o projeto ao seu repositório e abra **Actions → Android APK → Run workflow**. Informe a origem HTTPS no campo `server_url`. Para builds de push/PR, configure a variável do repositório `STUDYMIND_SERVER_URL`; sem endereço válido, a compilação falha. O usuário final nunca precisa configurar endereços. O fluxo executa lint Android e gera o artefato **StudyMind-Android-debug**, contendo `app-debug.apk`. Baixe e extraia o ZIP no computador, transfira o APK ao telefone e autorize a instalação por esse aplicativo de arquivos. O fluxo não publica na Play Store.

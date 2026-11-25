@@ -1,3 +1,4 @@
+import { SourcePreview } from "./SourcePreview";
 import { MarkdownContent, CopyText } from "@/components/app/MarkdownContent";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
@@ -17,12 +18,18 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
-import type { TutorMode, ExplanationLevel } from "@/lib/core/assistant";
+import {
+  messageSourceId,
+  citationDetails,
+  citationTitle,
+  type TutorMode,
+  type ExplanationLevel,
+} from "@/lib/core/assistant";
 
 type Msg = {
   role: "user" | "assistant";
   content: string;
-  sources?: { name: string; id: string | null }[];
+  sources?: { name: string; id: string | null; excerpt?: string }[];
 };
 
 export function Assistant() {
@@ -42,6 +49,7 @@ export function Assistant() {
     [mat, setMat] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [extraMaterials, setExtraMaterials] = useState<string[]>([]);
   const [includeProgress, setIncludeProgress] = useState(false);
   const [mode, setMode] = useState<TutorMode>("teacher");
   const [level, setLevel] = useState<ExplanationLevel>("standard");
@@ -94,7 +102,7 @@ export function Assistant() {
     id: string;
     conversationId: string;
     content: string;
-    sources: { name: string; id: string | null }[];
+    sources: { name: string; id: string | null; excerpt?: string }[];
   } | null>(null);
   const msgs: (Msg & { id: string })[] = (messages.data ?? [])
     .filter((m) => m.conversation_id === conversationId)
@@ -102,10 +110,13 @@ export function Assistant() {
       ...m,
       sources: (sources.data ?? [])
         .filter((s) => s.message_id === m.id)
-        .map((s) => ({ name: s.title, id: s.material_id })),
+        .map((s) => ({ ...s, citation: citationDetails(s.title, s.id, m.id) }))
+        .sort((a, b) => a.citation.position - b.citation.position)
+        .map((s) => ({ name: s.citation.name, id: s.material_id, excerpt: s.excerpt })),
     }));
   useEffect(() => {
     followMessages.current = true;
+    setExtraMaterials([]);
   }, [conversationId]);
   useEffect(() => {
     if (transcript.current && followMessages.current)
@@ -135,15 +146,16 @@ export function Assistant() {
         content: answer.content,
         model: null,
       });
-    for (const source of answer.sources) {
-      if (!(await repo.get("study_message_sources", answer.id)))
+    for (const [index, source] of answer.sources.entries()) {
+      const sourceId = messageSourceId(answer.id, index);
+      if (!(await repo.get("study_message_sources", sourceId)))
         await repo.insert("study_message_sources", {
-          id: answer.id,
+          id: sourceId,
           message_id: answer.id,
           material_id: source.id,
-          title: source.name,
+          title: citationTitle(source.name, index),
           url: null,
-          excerpt: "",
+          excerpt: source.excerpt ?? "",
           page_number: null,
         });
     }
@@ -210,6 +222,7 @@ export function Assistant() {
             .slice(-12)
             .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) })),
           material_id: material?.id ?? null,
+          material_ids: extraMaterials.filter((id) => id !== mat),
           include_progress: includeProgress,
           mode,
           level,
@@ -291,6 +304,39 @@ export function Assistant() {
                 Nova conversa
               </Button>
             </div>
+          </div>
+          <div
+            className="flex flex-wrap items-center gap-2 border-b px-5 py-3 text-xs text-muted-foreground"
+            aria-label="Contexto ativo"
+          >
+            <span>
+              {mode === "teacher"
+                ? "Professor: explicações e exemplos"
+                : mode === "review"
+                  ? "Revisão ativa: uma pergunta por vez"
+                  : "Avaliador: feedback da sua tentativa"}
+            </span>
+            <span>
+              ·{" "}
+              {level === "simple"
+                ? "Introdutório"
+                : level === "advanced"
+                  ? "Avançado"
+                  : "Intermediário"}
+            </span>
+            <span>
+              · {mats.data?.find((m) => m.id === mat)?.name ?? "Sem material principal"}
+              {extraMaterials.length > 0 ? ` + ${extraMaterials.length} fonte(s)` : ""}
+            </span>
+            {includeProgress && <span>· Uso do progresso autorizado</span>}
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busy || context.isPending || !!unsaved}
+              onClick={() => void changeContext({ mode: "review" })}
+            >
+              Praticar sem revelar a resposta
+            </Button>
           </div>
           <div
             className={`grid ${contextOpen ? "lg:grid-cols-[280px_minmax(0,1fr)]" : "grid-cols-1"}`}
@@ -421,6 +467,33 @@ export function Assistant() {
                   </NativeSelect>
                 </div>
               </div>
+              <fieldset className="space-y-2 text-sm" disabled={busy || context.isPending}>
+                <legend className="mb-2 font-medium">Comparar outros materiais</legend>
+                <p className="text-xs text-muted-foreground">
+                  Até cinco fontes, somando 60 mil caracteres. A seleção adicional vale para esta
+                  sessão.
+                </p>
+                {mats.data
+                  ?.filter((m) => m.id !== mat)
+                  .map((m) => (
+                    <label key={m.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={extraMaterials.includes(m.id)}
+                        disabled={
+                          !extraMaterials.includes(m.id) &&
+                          extraMaterials.filter((id) => id !== mat).length >= (mat ? 4 : 5)
+                        }
+                        onChange={(e) =>
+                          setExtraMaterials((ids) =>
+                            e.target.checked ? [...ids, m.id] : ids.filter((id) => id !== m.id),
+                          )
+                        }
+                      />
+                      {m.name}
+                    </label>
+                  ))}
+              </fieldset>
               <label className="mt-5 flex items-start gap-2.5 border-t pt-4 text-sm leading-relaxed">
                 <input
                   type="checkbox"
@@ -524,10 +597,22 @@ export function Assistant() {
                       </div>
                     )}
                     {m.role === "assistant" && Array.isArray(m.sources) && m.sources.length > 0 && (
-                      <p className="mt-3 border-t pt-2 text-xs text-muted-foreground">
-                        Material fornecido como contexto: {m.sources.map((s) => s.name).join(", ")}.
+                      <div className="mt-3 border-t pt-2 text-xs text-muted-foreground">
+                        Material fornecido como contexto:{" "}
+                        {m.sources.map((s, index) => `[${index + 1}] ${s.name}`).join(", ")}.
                         Confira a resposta no original.
-                      </p>
+                        {m.sources.map(
+                          (source, index) =>
+                            source.id && (
+                              <SourcePreview
+                                key={`${source.id}-${index}`}
+                                materialId={source.id}
+                                title={`[${index + 1}] ${source.name}`}
+                                excerpt={source.excerpt}
+                              />
+                            ),
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}

@@ -134,7 +134,7 @@ it("pré-visualiza e descarta a fonte sem alterar as outras preferências", () =
   expect(localStorage.getItem("studymind-preferences")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Revisar" }));
   expect(screen.getByRole("dialog")).toHaveTextContent("Fonte do texto");
-  fireEvent.click(screen.getByRole("button", { name: "Close" }));
+  fireEvent.click(screen.getByRole("button", { name: "Fechar" }));
   fireEvent.click(screen.getByRole("button", { name: "Descartar" }));
   expect(document.documentElement.dataset["font"]).toBe("manrope");
 });

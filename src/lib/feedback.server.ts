@@ -76,7 +76,7 @@ export async function handleFeedback(request: Request) {
   const parsed = feedbackSchema.safeParse(raw);
   if (!parsed.success)
     return json(
-      { error: "Informe nome, Gmail válido, tipo e mensagem de 10 a 5000 caracteres." },
+      { error: "Informe nome, e-mail válido, tipo e mensagem de 10 a 5000 caracteres." },
       400,
     );
   let id: string;

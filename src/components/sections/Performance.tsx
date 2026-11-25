@@ -1,3 +1,4 @@
+import { learningRewards } from "@/lib/core/engagement";
 import {
   Bar,
   BarChart,
@@ -46,6 +47,7 @@ export function Performance() {
     .filter((x) => x.value > 0);
   const free = ss.filter((x) => !x.subject_id).reduce((n, x) => n + x.minutes, 0);
   if (free) bySub.push({ name: "Sem disciplina", value: free });
+  const rewards = learningRewards(ss, answers.data ?? [], today());
   const q = quizStats(answers.data ?? []);
   return (
     <div className="space-y-6">
@@ -53,9 +55,14 @@ export function Performance() {
         title="Desempenho"
         description="Gráficos calculados exclusivamente das suas sessões e respostas registradas."
       />
+      <p className="text-sm text-muted-foreground">
+        Tempo cronometrado vem do Foco. Questões respondidas contam como prática mesmo sem
+        cronômetro; acertos descrevem o histórico e não certificam domínio de uma matéria. Retome as
+        dificuldades no caderno de erros em Exercícios.
+      </p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
-          label="Tempo total registrado"
+          label="Tempo cronometrado"
           value={formatMinutes(total)}
           hint={`${ss.length} sessões`}
         />
@@ -64,7 +71,7 @@ export function Performance() {
           value={ss.length ? formatMinutes(Math.round(total / ss.length)) : "—"}
         />
         <Stat
-          label="Acertos nos exercícios"
+          label="Acertos registrados"
           value={q.total ? `${q.pct}%` : "—"}
           hint={`${q.correct} de ${q.total} respostas`}
         />
@@ -79,6 +86,28 @@ export function Performance() {
           hint={`${formatMinutes(weekMinutes)} de ${formatMinutes(weekTarget)}`}
         />
       </div>
+      {!answers.isLoading && !answers.error && (
+        <Panel title="Conquistas pessoais">
+          <p className="font-semibold">
+            Nível {rewards.level} · {rewards.xp} XP · {rewards.nextLevel} XP para o próximo nível
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Progresso privado: 1 XP por minuto (até 60 por dia), 5 por acerto e 2 por tentativa.
+            Calculado dos registros atuais.
+          </p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {rewards.badges.map((b) => (
+              <li key={b.title}>
+                {b.earned ? "✓" : "○"} {b.title} — {b.description}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm">
+            Desafio opcional de hoje: responder 5 questões · {rewards.challenge.progress}/5{" "}
+            {rewards.challenge.completed && "· Concluído"}
+          </p>
+        </Panel>
+      )}
       {ss.length === 0 ? (
         <Empty
           title="Sem sessões registradas"

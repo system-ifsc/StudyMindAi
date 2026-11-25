@@ -3,7 +3,7 @@ export const MAX_PDF_BYTES = 10_000_000; // 10 MB
 export const MAX_DOCUMENT_BYTES = 10_000_000;
 export const MAX_CHARS = 200_000;
 
-export type FileKind = "txt" | "md" | "pdf" | "docx" | "pptx";
+export type FileKind = "txt" | "md" | "pdf" | "docx" | "pptx" | "image";
 export function detectKind(name: string): FileKind | null {
   const ext = name.toLowerCase().split(".").pop();
   return ext === "txt"
@@ -14,7 +14,9 @@ export function detectKind(name: string): FileKind | null {
         ? "pdf"
         : ext === "docx" || ext === "pptx"
           ? ext
-          : null;
+          : ["png", "jpg", "jpeg", "webp"].includes(ext ?? "")
+            ? "image"
+            : null;
 }
 export function validateFile(
   name: string,
@@ -22,7 +24,10 @@ export function validateFile(
 ): { ok: true; kind: FileKind } | { ok: false; error: string } {
   const kind = detectKind(name);
   if (!kind)
-    return { ok: false, error: "Formato não suportado. Envie .txt, .md, .pdf, .docx ou .pptx." };
+    return {
+      ok: false,
+      error: "Formato não suportado. Envie TXT, MD, PDF, DOCX, PPTX, PNG, JPG ou WebP.",
+    };
   if (size === 0) return { ok: false, error: "O arquivo está vazio." };
   const max = kind === "txt" || kind === "md" ? MAX_TEXT_BYTES : MAX_DOCUMENT_BYTES;
   if (size > max)

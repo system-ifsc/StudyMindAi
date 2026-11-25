@@ -65,6 +65,7 @@ export function buildAdaptivePlan(
   sessions: StudySession[],
   horizon = 14,
   minBlock = 15,
+  dailyCapacity: Readonly<Record<string, number>> = {},
 ) {
   const ranked = adaptiveTasks(tasks, subjects, answers, sessions, start);
   const focus = ranked.slice(0, Math.ceil(ranked.length * 0.2));
@@ -77,6 +78,7 @@ export function buildAdaptivePlan(
     minBlock,
     true,
     rank,
+    dailyCapacity,
   );
   return { ...plan, focus, evidence: ranked, end: addDays(start, horizon - 1) };
 }

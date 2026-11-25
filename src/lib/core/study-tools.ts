@@ -12,6 +12,10 @@ export const studyActions = {
   flashcards: "Flashcards",
   quiz: "Questionário",
   exam: "Simulado",
+  enem: "Simulado ENEM / vestibulares",
+  mindmap: "Mapa mental",
+  essay: "Feedback de redação ENEM",
+  podcast: "Roteiro de podcast",
 } as const;
 export type StudyAction = keyof typeof studyActions;
 export const studyActionSchema = z.enum(
@@ -76,7 +80,7 @@ export function parseStudyOutput(text: string, action: StudyAction): StudyOutput
   const expected =
     action === "flashcards"
       ? "flashcards"
-      : action === "quiz" || action === "exam"
+      : action === "quiz" || action === "exam" || action === "enem"
         ? "quiz"
         : "text";
   if (output.type !== expected)
@@ -109,19 +113,28 @@ export function progressContext(
   };
 }
 
-export function studyPrompt(action: StudyAction, count: number) {
+export function studyPrompt(action: StudyAction, count: number, readingMinutes = 3) {
   const base = `Use exclusivamente o material fornecido. Não invente fatos nem fontes. Se o conteúdo for insuficiente, informe isso em um objeto type=text. Responda apenas JSON válido, sem markdown externo. `;
   if (action === "flashcards")
     return (
       base +
       `Gere ${count} cartões: {"type":"flashcards","cards":[{"front":"pergunta","back":"resposta"}]}. Uma ideia por cartão; front até 1000 e back até 3000 caracteres.`
     );
-  if (action === "quiz" || action === "exam")
+  if (action === "quiz" || action === "exam" || action === "enem")
     return (
       base +
-      `Gere ${count} questões variadas (múltipla escolha, verdadeiro/falso e discursiva) ${action === "exam" ? "para um simulado abrangente" : "para praticar"}. Formato: {"type":"quiz","title":"título até 150 caracteres","questions":[{"type":"multiple_choice|true_false|open","topic":"tema até 80 caracteres","question":"enunciado","options":["alternativas"],"correct":0,"answer":"resposta de referência","explanation":"explicação didática do gabarito e dos erros"}]}. multiple_choice: 3 a 5 alternativas distintas, correct é índice iniciado em zero. true_false: options exatamente ["Verdadeiro","Falso"], correct 0 ou 1. open: options [], correct null. Não crie perguntas ambíguas.`
+      `Gere ${count} questões variadas (múltipla escolha, verdadeiro/falso e discursiva) ${action === "exam" ? "para um simulado abrangente" : action === "enem" ? "inspiradas no ENEM e vestibulares, contextualizadas, com interpretação e aplicação de conceitos; não afirme que são questões oficiais" : "para praticar"}. Formato: {"type":"quiz","title":"título até 150 caracteres","questions":[{"type":"multiple_choice|true_false|open","topic":"tema até 80 caracteres","question":"enunciado","options":["alternativas"],"correct":0,"answer":"resposta de referência","explanation":"explicação didática do gabarito e dos erros"}]}. multiple_choice: 3 a 5 alternativas distintas, correct é índice iniciado em zero. true_false: options exatamente ["Verdadeiro","Falso"], correct 0 ou 1. open: options [], correct null. Não crie perguntas ambíguas.`
     );
-  const instructions: Record<Exclude<StudyAction, "flashcards" | "quiz" | "exam">, string> = {
+  const instructions: Record<
+    Exclude<StudyAction, "flashcards" | "quiz" | "exam" | "enem">,
+    string
+  > = {
+    mindmap:
+      "Crie um mapa mental textual: um título #, ramos principais como ## e relações/conceitos em listas dentro de cada ramo. Explicite relações e cite o nome da fonte em cada ramo. Não use Mermaid nem HTML.",
+    essay:
+      "O material é uma redação do estudante, possivelmente com tema informado no início. Avalie formativamente pelas cinco competências do ENEM (norma formal, compreensão do tema, argumentação, coesão e proposta de intervenção respeitando direitos humanos). Para cada competência, mostre evidências citando trechos e sugestões concretas. Não dê nota oficial, não finja ser corretor do INEP e não reescreva a redação inteira. Se o tema estiver ausente, explicite que a adequação ao tema não pode ser avaliada. Não trate os argumentos da redação como fatos verificados.",
+    podcast:
+      "Crie um roteiro curto de podcast educacional com duas vozes identificadas como Apresentador e Tutor, introdução, explicação, exemplos presentes nas fontes e três perguntas de revisão. Identifique as fontes usadas. É um roteiro para leitura, não um arquivo de áudio.",
     summary:
       "Faça um resumo completo e organizado, com os assuntos principais e exemplos presentes no material.",
     simplified:
@@ -138,6 +151,9 @@ export function studyPrompt(action: StudyAction, count: number) {
   return (
     base +
     instructions[action] +
+    (["summary", "simplified", "keypoints", "guide"].includes(action)
+      ? ` Limite o texto a aproximadamente ${readingMinutes * 180} palavras para uma leitura estimada em ${readingMinutes} minuto(s), sem omitir ressalvas essenciais.`
+      : "") +
     ' Formato: {"type":"text","title":"título até 150 caracteres","content":"conteúdo em Markdown até 50000 caracteres"}.'
   );
 }

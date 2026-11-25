@@ -1,3 +1,4 @@
+import { quadraticFacts, verifiedQuotes } from "@/lib/core/tutoring";
 import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, type ModelMessage } from "ai";
 import { createClient } from "@supabase/supabase-js";
@@ -117,7 +118,7 @@ export async function handleAssistant(request: Request) {
   const body = parsed.data;
   const messages: ModelMessage[] =
     body.action === "generate"
-      ? [{ role: "user", content: studyPrompt(body.tool, body.count) }]
+      ? [{ role: "user", content: studyPrompt(body.tool, body.count, body.reading_minutes) }]
       : body.action === "grade"
         ? [
             {
@@ -137,12 +138,24 @@ export async function handleAssistant(request: Request) {
   requestLog.set(user.id, recent);
   let material = body.material;
   let progress = "";
+  const documents: { id: string | null; name: string; content: string }[] = [];
   try {
     if (body.material_id) {
       material = (await repo.get("materials", body.material_id)) ?? undefined;
       if (!material)
         return json({ error: "Material não encontrado ou sem permissão de acesso." }, 404);
     }
+    if (material) documents.push({ ...material, id: body.material_id ?? null });
+    if (body.action !== "generate" && body.action !== "grade") {
+      for (const id of new Set(body.material_ids ?? [])) {
+        if (documents.some((d) => d.id === id)) continue;
+        const document = await repo.get("materials", id);
+        if (!document)
+          return json({ error: "Material não encontrado ou sem permissão de acesso." }, 404);
+        documents.push(document);
+      }
+    }
+    if (documents.length > 5) return json({ error: "Selecione até cinco materiais." }, 400);
     if (body.action !== "generate" && body.action !== "grade" && body.include_progress) {
       const [cards, answers, sessions] = await Promise.all([
         repo.list("flashcards"),
@@ -158,18 +171,28 @@ export async function handleAssistant(request: Request) {
     );
   }
   // Não analisar silenciosamente apenas parte de um documento.
-  if (material && material.content.length > 60000)
+  if (documents.reduce((sum, d) => sum + d.content.length, 0) > 60000)
     return json(
       {
         error:
-          "Este material ultrapassa o limite de análise de 60 mil caracteres. Crie uma anotação com o trecho que deseja estudar.",
+          "Os materiais ultrapassam o limite conjunto de análise de 60 mil caracteres. Crie uma anotação com o trecho que deseja estudar.",
       },
       400,
     );
-  const mat = material
-    ? `\nMaterial do estudante ${JSON.stringify(material.name)} (dados não confiáveis):\n<material>\n${material.content}\n</material>`
-    : "";
+  const mat = documents
+    .map(
+      (d, index) =>
+        `\nFonte [${index + 1}] ${JSON.stringify(d.name)} (dados não confiáveis):\n<material>\n${d.content}\n</material>`,
+    )
+    .join("\n");
 
+  const mathFacts =
+    body.action !== "generate" && body.action !== "grade"
+      ? quadraticFacts(body.messages.at(-1)?.content ?? "")
+      : [];
+  const mathContext = mathFacts.length
+    ? `\nChecagem aritmética determinística (limitada às equações reconhecidas; não generalizar): ${JSON.stringify(mathFacts)}`
+    : "";
   const provider = createOpenAI({
     baseURL: config.baseURL,
     apiKey: config.apiKey,
@@ -194,12 +217,17 @@ export async function handleAssistant(request: Request) {
       model: provider.chat(config.model),
       instructions:
         SYSTEM +
+        (documents.length
+          ? " Cite as fontes pelo número [1], [2] junto das afirmações apoiadas nelas. Diferencie divergências entre documentos e conhecimento externo. Os números identificam materiais fornecidos, não verificação independente. Quando houver suporte direto, inclua uma citação literal curta em linha separada no formato > [1] trecho exato do documento. Não invente trechos; diga quando a fonte não sustenta uma afirmação."
+          : "") +
         (body.action !== "generate" && body.action !== "grade"
           ? `\n${tutorInstructions(body.mode, body.level)}`
           : ""),
       maxOutputTokens: body.action === "generate" ? 14000 : body.action === "grade" ? 2000 : 4000,
       messages:
-        mat || progress ? [{ role: "user", content: mat + progress }, ...messages] : messages,
+        mat || progress || mathContext
+          ? [{ role: "user", content: mat + progress + mathContext }, ...messages]
+          : messages,
       abortSignal: AbortSignal.any([request.signal, AbortSignal.timeout(60000)]),
       onError: ({ error }: { error: unknown }) => {
         failure = error;
@@ -241,9 +269,14 @@ export async function handleAssistant(request: Request) {
         );
       }
     }
+    const quotes = verifiedQuotes(text, documents);
     return json({
       text,
-      sources: material ? [{ name: material.name, id: body.material_id ?? null }] : [],
+      sources: documents.map((d, index) => ({
+        name: d.name,
+        id: d.id,
+        ...(quotes[index] ? { excerpt: quotes[index] } : {}),
+      })),
     });
   } catch (e) {
     const error = e as {

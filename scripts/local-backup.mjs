@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile, copyFile, chmod, stat } from "node:fs/promises";
@@ -62,7 +63,7 @@ export async function restoreSnapshot(snapshot, targetDirectory) {
   checkDatabase(destination).close();
   return destination;
 }
-if (process.argv[1] && resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [command, source, destination] = process.argv.slice(2);
   try {
     if (command === "create" && source)

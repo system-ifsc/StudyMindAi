@@ -1,3 +1,5 @@
+import { planningScenario } from "@/lib/core/planner";
+import { ExamSprint } from "./ExamSprint";
 import { useEffect, useState } from "react";
 import { Cpu, AlertTriangle } from "lucide-react";
 import { useProfile, useTable } from "@/hooks/use-data";
@@ -13,6 +15,8 @@ import { Label } from "@/components/ui/label";
 export function Planner({ go }: SectionProps) {
   const [horizon, setHorizon] = useState(14);
   const [minBlock, setMinBlock] = useState(15);
+  const [unavailableDays, setUnavailableDays] = useState(0);
+  const [minutesToday, setMinutesToday] = useState<number | null>(null);
   const [loadedOwner, setLoadedOwner] = useState<string | null>(null);
   const subjects = useTable("subjects"),
     answers = useTable("quiz_answers"),
@@ -59,6 +63,7 @@ export function Planner({ go }: SectionProps) {
     sessions.data!,
     horizon,
     minBlock,
+    planningScenario(t, unavailableDays, minutesToday),
   );
   const byDay = blocks.reduce<Record<string, typeof blocks>>(
     (m, b) => ((m[b.date] ??= []).push(b), m),
@@ -71,6 +76,7 @@ export function Planner({ go }: SectionProps) {
         title="Planejador"
         description={`Distribui suas atividades pendentes nos próximos ${horizon} dias conforme sua disponibilidade e os prazos.`}
       />
+      <ExamSprint />
       <div className="flex items-start gap-3 rounded-2xl border bg-surface p-4 text-sm">
         <Cpu className="mt-0.5 size-4 text-primary" aria-hidden />
         <p>
@@ -80,6 +86,61 @@ export function Planner({ go }: SectionProps) {
           Mesmos dados → mesmo plano.
         </p>
       </div>
+      <Panel title="Minha semana mudou">
+        <p className="mb-3 text-sm text-muted-foreground">
+          Compare um cenário temporário: o plano abaixo é recalculado sem alterar seu perfil ou suas
+          atividades. Dias sem estudo começam hoje; o aviso de falta de tempo mostra o que precisa
+          ser renegociado.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor="scenario-days">Dias sem disponibilidade a partir de hoje</Label>
+            <Input
+              id="scenario-days"
+              type="number"
+              min={0}
+              max={7}
+              value={unavailableDays}
+              onChange={(e) =>
+                setUnavailableDays(
+                  Math.max(0, Math.min(7, Math.floor(Number(e.target.value) || 0))),
+                )
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="scenario-minutes">Minutos disponíveis hoje (opcional)</Label>
+            <Input
+              id="scenario-minutes"
+              type="number"
+              min={0}
+              max={960}
+              value={minutesToday ?? ""}
+              placeholder="Usar disponibilidade habitual"
+              disabled={unavailableDays > 0}
+              onChange={(e) =>
+                setMinutesToday(
+                  e.target.value === ""
+                    ? null
+                    : Math.max(0, Math.min(960, Math.floor(Number(e.target.value) || 0))),
+                )
+              }
+            />
+          </div>
+        </div>
+        {(unavailableDays > 0 || minutesToday !== null) && (
+          <Button
+            className="mt-3"
+            variant="outline"
+            onClick={() => {
+              setUnavailableDays(0);
+              setMinutesToday(null);
+            }}
+          >
+            Voltar à rotina habitual
+          </Button>
+        )}
+      </Panel>
       <Panel
         title="Sua disponibilidade"
         action={

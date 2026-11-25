@@ -1,3 +1,4 @@
+import { citationDetails, citationTitle } from "./assistant";
 import { z } from "zod";
 import { backupSchema, parseBackup, type Backup } from "./backup";
 import { rowSchemas, rowReferences } from "./local-validation";
@@ -132,6 +133,12 @@ export function fullBackupAdditions(
         for (const [field, target] of Object.entries(rowReferences[table] ?? {}))
           if (row[field] != null) row[field] = ids.get(target)!.get(row[field] as string)!;
         if ("client_id" in row) row["client_id"] = nextId();
+        if (table === "study_message_sources") {
+          const source = original as Tables["study_message_sources"];
+          const citation = citationDetails(source.title, source.id, source.message_id);
+          const title = citationTitle(citation.name, citation.position);
+          if (citation.position < 5 && title.length <= 200) row["title"] = title;
+        }
         if (table === "material_files") row["object_path"] = `${owner}/${row["id"]}`;
         return row;
       }),

@@ -1,3 +1,5 @@
+import { MarkdownContent } from "@/components/app/MarkdownContent";
+import { ErrorNotebook } from "./ErrorNotebook";
 import { StudyTools } from "./StudyTools";
 import { SavedQuizzes } from "./SavedQuizzes";
 import { useMemo, useState } from "react";
@@ -7,7 +9,12 @@ import { questionsForCourse, findCourse, COURSES } from "@/lib/core/courses";
 import { NativeSelect, PageHeader, Panel } from "@/components/app/ui";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { QUESTIONS, selectPracticeQuestions, type Question } from "@/lib/core/questions";
+import {
+  QUESTIONS,
+  selectPracticeQuestions,
+  selectAdaptiveQuestions,
+  type Question,
+} from "@/lib/core/questions";
 import { quizStats } from "@/lib/core/metrics";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +42,7 @@ export function Exercises() {
       },
     });
   }
+  const [adaptive, setAdaptive] = useState(false);
   const [topic, setTopic] = useState("all");
   const [quiz, setQuiz] = useState<Question[] | null>(null);
   const [idx, setIdx] = useState(0),
@@ -47,7 +55,9 @@ export function Exercises() {
   );
 
   function start() {
-    setQuiz(selectPracticeQuestions(pool, answers.data ?? [], 10));
+    setQuiz(
+      (adaptive ? selectAdaptiveQuestions : selectPracticeQuestions)(pool, answers.data ?? [], 10),
+    );
     setIdx(0);
     setPicked(null);
     setScore(0);
@@ -127,7 +137,17 @@ export function Exercises() {
               </button>
             </p>
           )}
+          <label className="mt-4 flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={adaptive}
+              onChange={(e) => setAdaptive(e.target.checked)}
+            />
+            Priorizar temas com dificuldades (adaptação determinística)
+          </label>
           <p className="mt-3 text-xs text-muted-foreground">
+            {adaptive &&
+              "Prioriza menor acerto por tema com pelo menos três respostas registradas. "}
             A rodada prioriza questões menos praticadas e, em empate, as respondidas há mais tempo.
           </p>
           <p className="mt-4 text-sm text-muted-foreground">
@@ -144,7 +164,7 @@ export function Exercises() {
           title={`Questão ${idx + 1} de ${quiz!.length}`}
           action={<span className="text-sm text-muted-foreground">{q.topic}</span>}
         >
-          <p className="mb-4 text-lg">{q.q}</p>
+          <MarkdownContent content={q.q} />
           <div className="grid gap-2" role="radiogroup" aria-label="Alternativas">
             {q.opts.map((o, i) => (
               <button
@@ -163,7 +183,7 @@ export function Exercises() {
                   <span className="mr-2 font-semibold text-muted-foreground">
                     {String.fromCharCode(65 + i)})
                   </span>
-                  {o}
+                  <MarkdownContent content={o} inline />
                 </span>
                 {picked !== null && i === q.correct && (
                   <CheckCircle2 className="size-4 text-success" aria-label="Correta" />
@@ -223,8 +243,9 @@ export function Exercises() {
           </div>
         </Panel>
       )}
+      <ErrorNotebook />
       <SavedQuizzes />
-      <StudyTools initialAction="quiz" allowed={["quiz", "exam"]} />
+      <StudyTools initialAction="quiz" allowed={["quiz", "exam", "enem", "essay"]} />
     </div>
   );
 }

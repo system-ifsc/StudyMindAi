@@ -1,3 +1,4 @@
+import { MarkdownContent } from "@/components/app/MarkdownContent";
 import { useEffect, useRef, useState } from "react";
 import { useSave, useRepo } from "@/hooks/use-data";
 import { useQueryClient } from "@tanstack/react-query";
@@ -190,7 +191,7 @@ export function GeneratedQuiz({
           <legend className="px-1 text-sm font-medium">
             Questão {i + 1} · {q.topic}
           </legend>
-          <p className="whitespace-pre-wrap text-sm">{q.question}</p>
+          <MarkdownContent content={q.question} />
           {q.type === "open" ? (
             <Textarea
               aria-label={`Resposta da questão ${i + 1}`}
@@ -210,7 +211,7 @@ export function GeneratedQuiz({
                   checked={answers[i] === String(n)}
                   onChange={() => setAnswers({ ...answers, [i]: String(n) })}
                 />
-                {option}
+                <MarkdownContent content={option} inline />
               </label>
             ))
           )}
@@ -220,8 +221,8 @@ export function GeneratedQuiz({
                 {evaluations[i].correct ? "Correto" : "Revisar"}
                 {q.type === "open" ? " · avaliação por IA" : ""}
               </strong>
-              <p className="whitespace-pre-wrap">{evaluations[i].feedback}</p>
-              <p>Resposta de referência: {q.answer}</p>
+              <MarkdownContent content={evaluations[i].feedback} />
+              <MarkdownContent content={`Resposta de referência: ${q.answer}`} />
             </div>
           )}
         </fieldset>

@@ -105,3 +105,12 @@ describe("tutorial de boas-vindas", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
+
+it("permite sair do passeio para criar a primeira atividade sem perder a confirmação", async () => {
+  const { updateProfile, revealSection } = setup();
+  await screen.findByRole("dialog");
+  fireEvent.click(screen.getByRole("button", { name: "Criar minha primeira atividade" }));
+  await waitFor(() => expect(revealSection).toHaveBeenCalledWith("atividades"));
+  expect(updateProfile).toHaveBeenCalledWith({ tutorial_completed: true });
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});

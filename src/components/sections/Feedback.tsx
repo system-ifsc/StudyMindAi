@@ -81,7 +81,7 @@ export function Feedback() {
         <p className="mb-5 text-sm text-muted-foreground">
           Seu feedback será registrado no app. Quando o envio por e-mail estiver disponível, uma
           cópia também será encaminhada para {FEEDBACK_EMAIL}. Ao enviar, você compartilha seu nome,
-          Gmail e mensagem com a equipe.
+          e-mail e mensagem com a equipe.
         </p>
         {demo ? (
           <p role="note" className="mb-4 text-sm">
@@ -117,7 +117,7 @@ export function Feedback() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="feedback-email">Seu Gmail</Label>
+            <Label htmlFor="feedback-email">Seu e-mail</Label>
             <Input
               id="feedback-email"
               name="email"

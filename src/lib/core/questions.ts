@@ -26,6 +26,25 @@ export function selectPracticeQuestions(
     .slice(0, Math.max(0, Math.floor(limit)));
 }
 
+/** Adaptação por tema com pelo menos três respostas; empates mantêm a seleção usual. */
+export function selectAdaptiveQuestions(pool: Question[], answers: QuizAnswer[], limit = 10) {
+  const topics = new Map<string, { total: number; correct: number }>();
+  for (const a of answers) {
+    const t = topics.get(a.topic) ?? { total: 0, correct: 0 };
+    t.total++;
+    t.correct += Number(a.correct);
+    topics.set(a.topic, t);
+  }
+  const weakness = (topic: string) => {
+    const t = topics.get(topic);
+    return t && t.total >= 3 ? 1 - t.correct / t.total : 0;
+  };
+  if (!Number.isFinite(limit)) return [];
+  return selectPracticeQuestions(pool, answers, pool.length)
+    .sort((a, b) => weakness(b.topic) - weakness(a.topic))
+    .slice(0, Math.max(0, Math.floor(limit)));
+}
+
 export interface Question {
   id: string;
   topic: string;
@@ -355,4 +374,64 @@ export const QUESTIONS: Question[] = [
     why: "Forçar a memória a recuperar a informação fortalece mais do que reler passivamente.",
   },
 ];
+QUESTIONS.push(
+  {
+    id: "mat-1",
+    topic: "Matemática",
+    q: "Quantas raízes reais distintas tem x² − 5x + 6 = 0?",
+    opts: ["Nenhuma", "Uma", "Duas", "Três"],
+    correct: 2,
+    why: "O discriminante é 25 − 24 = 1 > 0. As raízes são 2 e 3, verificadas por substituição.",
+  },
+  {
+    id: "mat-2",
+    topic: "Matemática",
+    q: "Quantas raízes reais distintas tem x² + 1 = 0?",
+    opts: ["Nenhuma", "Uma", "Duas", "Infinitas"],
+    correct: 0,
+    why: "Para x real, x² é não negativo; logo x² + 1 ≥ 1. Equivalentemente, o discriminante é −4 < 0.",
+  },
+  {
+    id: "mat-3",
+    topic: "Matemática",
+    q: "Em x² − 6x + 9 = 0, o discriminante é zero. Isso significa…",
+    opts: [
+      "Duas raízes reais distintas",
+      "Nenhuma raiz real",
+      "Uma raiz real dupla",
+      "Que não é equação quadrática",
+    ],
+    correct: 2,
+    why: "(x − 3)² = 0 tem raiz 3 com multiplicidade dois. A parábola tangencia o eixo x.",
+  },
+  {
+    id: "mat-4",
+    topic: "Matemática",
+    q: "Qual é o coeficiente b em x² − 5x + 6 = 0?",
+    opts: ["5", "−5", "6", "1"],
+    correct: 1,
+    why: "Na forma ax² + bx + c, o sinal faz parte do coeficiente. Assim a = 1, b = −5 e c = 6.",
+  },
+  {
+    id: "mat-5",
+    topic: "Matemática",
+    q: "Qual é o resultado de (−3) × (−3)?",
+    opts: ["−9", "−6", "6", "9"],
+    correct: 3,
+    why: "O produto de dois números negativos é positivo; 3 × 3 = 9.",
+  },
+  {
+    id: "por-1",
+    topic: "Português",
+    q: "Em um texto argumentativo, a tese é…",
+    opts: [
+      "A posição defendida pelo autor",
+      "Uma lista de fontes sem explicação",
+      "Qualquer exemplo isolado",
+      "Somente a última frase",
+    ],
+    correct: 0,
+    why: "A tese expressa o posicionamento central sustentado pelos argumentos. Sua localização pode variar.",
+  },
+);
 export const TOPICS = [...new Set(QUESTIONS.map((q) => q.topic))];

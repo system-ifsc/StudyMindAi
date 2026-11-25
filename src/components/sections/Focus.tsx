@@ -15,6 +15,7 @@ import {
   sessionMinutes,
   startTimer,
   timerStorageKey,
+  timerDurationError,
   type TimerState,
 } from "@/lib/core/pomodoro";
 import { formatMinutes, today, toISODate } from "@/lib/core/dates";
@@ -90,7 +91,12 @@ export function Focus() {
     }
   }, [now, timer]);
 
+  const durationError = timerDurationError(target);
   function start() {
+    if (durationError) {
+      toast.error(durationError);
+      return;
+    }
     const task = tasks.data?.find((t) => t.id === taskId);
     setNow(Date.now());
     setTimer(
@@ -211,13 +217,16 @@ export function Focus() {
               <Label htmlFor="f-task">Atividade</Label>
               <NativeSelect
                 id="f-task"
-                value={taskId}
+                value={timer ? (timer.taskId ?? "") : taskId}
                 onChange={(e) => setTaskId(e.target.value)}
                 disabled={!!timer}
               >
                 <option value="">Estudo livre</option>
+                {timer?.taskId && !tasks.data?.some((t) => t.id === timer.taskId) && (
+                  <option value={timer.taskId}>{timer.label}</option>
+                )}
                 {tasks.data
-                  ?.filter((t) => !t.done)
+                  ?.filter((t) => !t.done || t.id === timer?.taskId)
                   .map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.title}
@@ -232,12 +241,21 @@ export function Focus() {
                 type="number"
                 min={5}
                 max={120}
-                value={target}
+                value={timer?.targetMin ?? target}
                 disabled={!!timer}
-                onChange={(e) =>
-                  setTarget(Math.max(5, Math.min(120, Number(e.target.value) || 25)))
-                }
+                onChange={(e) => setTarget(Number(e.target.value))}
+                aria-describedby="focus-duration-help"
+                aria-invalid={!timer && !!durationError}
               />
+              <p id="focus-duration-help" className="text-xs text-muted-foreground">
+                Informe de 5 a 120 minutos inteiros. O ciclo não é alterado ao voltar para esta
+                tela.
+              </p>
+              {!timer && durationError && (
+                <p role="alert" className="text-sm text-destructive">
+                  {durationError}
+                </p>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
               Hoje: <strong className="text-foreground">{formatMinutes(todayMin)}</strong>{" "}

@@ -147,8 +147,10 @@ export function TutorialProvider({
       setDismissed(true);
       setStep(null);
       setRect(null);
+      return true;
     } catch {
       // useSave exibe o erro e mantém o passeio aberto para uma nova tentativa.
+      return false;
     }
   }
   function move(next: number) {
@@ -285,6 +287,17 @@ export function TutorialProvider({
               <Dialog.Description className="text-sm leading-relaxed text-muted-foreground">
                 {current?.description}
               </Dialog.Description>
+              {step === 0 && revealSection && (
+                <Button
+                  variant="outline"
+                  disabled={save.isPending}
+                  onClick={async () => {
+                    if (await finish()) revealSection("atividades");
+                  }}
+                >
+                  Criar minha primeira atividade
+                </Button>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <Button variant="ghost" disabled={save.isPending} onClick={() => void finish()}>
                   Pular tutorial

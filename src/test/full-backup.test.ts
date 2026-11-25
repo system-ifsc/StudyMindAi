@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeAll, afterAll, it, expect, vi } from "vitest";
-import { mkdtempSync, mkdirSync, rmSync, appendFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, appendFileSync, copyFileSync, existsSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { DatabaseSync } from "node:sqlite";
@@ -8,7 +8,7 @@ import { closeLocalDatabase, localDatabase } from "@/lib/local/database.server";
 import { handleLocalApi } from "@/lib/local/api.server";
 import { createLocalRepo } from "@/lib/repo/local.server";
 import { exportFullBackup } from "@/lib/repo/full-backup";
-import { verifyFullBackup, parseAnyBackup } from "@/lib/core/full-backup";
+import { verifyFullBackup, parseAnyBackup, fullBackupAdditions } from "@/lib/core/full-backup";
 import { restoreQuiz } from "@/lib/core/learning";
 import { TABLES } from "@/lib/core/types";
 import type { Repo } from "@/lib/repo/types";
@@ -140,4 +140,49 @@ it("gera snapshot consistente com WAL e restaura contas e arquivos em banco novo
       { env, stdio: "pipe" },
     ),
   ).toThrow();
+});
+
+it("executa snapshot e restauração quando o caminho do script contém espaços", () => {
+  const folder = join(directory, "caminho com espaços");
+  mkdirSync(folder);
+  const script = join(folder, "local-backup.mjs");
+  copyFileSync("scripts/local-backup.mjs", script);
+  const snapshot = join(folder, "snapshot.sqlite");
+  const restored = join(folder, "restaurado");
+  const env = { ...process.env, LOCAL_DATA_DIR: directory };
+  expect(
+    execFileSync(process.execPath, [script, "create", snapshot], { env, encoding: "utf8" }),
+  ).toContain("Snapshot criado");
+  expect(existsSync(snapshot)).toBe(true);
+  expect(
+    execFileSync(process.execPath, [script, "restore", snapshot, restored], {
+      env,
+      encoding: "utf8",
+    }),
+  ).toContain("Snapshot restaurado");
+  expect(existsSync(join(restored, "studymind.sqlite"))).toBe(true);
+});
+
+it("mantém a numeração das fontes legadas após remapear IDs no backup", async () => {
+  const backup = await exportFullBackup(source);
+  const original = backup.records.study_message_sources[0]!;
+  const { messageSourceId, citationDetails } = await import("@/lib/core/assistant");
+  backup.records.study_message_sources = [
+    { ...original, id: messageSourceId(original.message_id, 0), title: "Fonte A" },
+    { ...original, id: messageSourceId(original.message_id, 1), title: "Fonte B" },
+  ];
+  const restored = fullBackupAdditions(backup, "new-owner", () => crypto.randomUUID());
+  expect(restored.study_message_sources.map((s) => s.title)).toEqual([
+    "[1] Fonte A",
+    "[2] Fonte B",
+  ]);
+  expect(
+    restored.study_message_sources.map(
+      (s) => citationDetails(s.title, s.id, s.message_id).position,
+    ),
+  ).toEqual([0, 1]);
+  expect(restored.study_message_sources[0]!.message_id).not.toBe(original.message_id);
+  backup.records.study_message_sources[0]!.title = "a".repeat(200);
+  const longTitle = fullBackupAdditions(backup, "new-owner", () => crypto.randomUUID());
+  expect(longTitle.study_message_sources[0]!.title).toBe("a".repeat(200));
 });

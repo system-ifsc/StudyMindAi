@@ -1,6 +1,10 @@
 import { isPasswordRecoveryLink } from "@/lib/core/password-recovery";
 import { buildAdaptivePlan } from "@/lib/core/adaptive-plan";
-import { assistantProviderError } from "@/lib/core/assistant";
+import {
+  assistantProviderError,
+  messageSourceId,
+  messageSourcePosition,
+} from "@/lib/core/assistant";
 import { authErrorMessage, passwordResetError } from "@/lib/core/auth-errors";
 import { describe, expect, it } from "vitest";
 
@@ -79,12 +83,15 @@ describe("catálogo de cursos", () => {
     }
     expect(questionsForCourse(QUESTIONS, "Curso inexistente")).toEqual([]);
   });
-  it("oferece somente os quatro cursos do projeto", () => {
+  it("preserva os cursos técnicos e oferece contextos gerais", () => {
     expect(COURSES.map((course) => course.name)).toEqual([
       "Informática para Internet",
       "Agroecologia",
       "Biotecnologia",
       "Mecatrônica",
+      "Ensino médio",
+      "ENEM e vestibulares",
+      "Outro curso",
     ]);
     for (const course of COURSES) expect(course.subjects.length).toBeGreaterThan(0);
   });
@@ -696,7 +703,7 @@ describe("feedback", () => {
   it("exige nome, Gmail, categoria e mensagem válidos", () => {
     for (const invalid of [
       { name: "" },
-      { email: "outro@example.com" },
+      { email: "email-invalido" },
       { email: "@gmail.com" },
       { category: "Outra" },
       { message: " " },
@@ -822,4 +829,220 @@ describe("identificação do link de recuperação", () => {
     expect(isPasswordRecoveryLink("?next=recovery", "#access_token=token")).toBe(false);
     expect(isPasswordRecoveryLink("", "")).toBe(false);
   });
+});
+
+import { learningRewards, matchingPairs, materialReviewTasks } from "@/lib/core/engagement";
+import { selectAdaptiveQuestions } from "@/lib/core/questions";
+
+describe("estudo integrado e conquistas", () => {
+  it("limita XP de tempo por dia e não duplica o mesmo client_id", () => {
+    const s = {
+      id: "s",
+      client_id: "one",
+      subject_id: null,
+      task_id: null,
+      title: "Estudo",
+      started_at: "2026-11-25T12:00:00Z",
+      ended_at: "2026-11-25T14:00:00Z",
+      minutes: 120,
+    };
+    const answer = {
+      id: "a",
+      question_id: "q",
+      topic: "SQL",
+      correct: true,
+      answered_at: s.started_at,
+    };
+    const result = learningRewards([s, s], [answer, answer], "2026-11-25");
+    expect(result.xp).toBe(65);
+    expect(result.level).toBe(1);
+    expect(result.challenge.progress).toBe(1);
+    expect(learningRewards([], [], "2026-11-25").xp).toBe(0);
+  });
+  it("agenda revisões reais e permite retomar um lote parcialmente salvo", () => {
+    const material = {
+      id: "m",
+      name: "Biologia",
+      content: "DNA",
+      kind: "txt" as const,
+      subject_id: "s",
+    };
+    const tasks = materialReviewTasks(material, "2026-11-25", []);
+    expect(tasks.map((t) => t.due_date)).toEqual(["2026-11-26", "2026-12-02", "2026-12-25"]);
+    expect(tasks.every((t) => t.subject_id === "s")).toBe(true);
+    expect(
+      materialReviewTasks(material, "2026-11-25", [{ ...tasks[0]!, id: "task" }]),
+    ).toHaveLength(2);
+  });
+  it("evita pares ambíguos e preserva cartões originais", () => {
+    const card = {
+      id: "a",
+      subject_id: null,
+      front: "DNA?",
+      back: "Material genético",
+      due_date: "2026-11-25",
+      interval_days: 0,
+      ease: 2.5,
+      reps: 0,
+    };
+    const cards = [
+      card,
+      { ...card, id: "b", front: "dna?" },
+      { ...card, id: "c", front: "Outro?" },
+    ];
+    expect(matchingPairs(cards)).toEqual([card]);
+    expect(cards).toHaveLength(3);
+  });
+  it("adapta a seleção às dificuldades só com evidência suficiente", () => {
+    const question = (id: string, topic: string) => ({
+      id,
+      topic,
+      q: "Pergunta",
+      opts: ["A", "B"],
+      correct: 0,
+      why: "Explicação",
+    });
+    const pool = [question("a", "Fácil"), question("b", "Difícil")];
+    const answers = Array.from({ length: 3 }, (_, i) => ({
+      id: String(i),
+      question_id: "b",
+      topic: "Difícil",
+      correct: false,
+      answered_at: "2026-11-25T12:00:00Z",
+    }));
+    expect(selectAdaptiveQuestions(pool, answers, 1)[0]?.id).toBe("b");
+    expect(selectAdaptiveQuestions(pool, answers.slice(0, 2), 1)[0]?.id).toBe("a");
+  });
+});
+
+it("mantém identidade e ordem das fontes mesmo ao transbordar o sufixo UUID", () => {
+  const message = "11111111-1111-4111-8111-ffffffffffff";
+  const ids = [0, 1, 2, 3, 4].map((i) => messageSourceId(message, i));
+  expect(new Set(ids).size).toBe(5);
+  expect(ids[0]).toBe(message);
+  expect(ids.map((id) => messageSourcePosition(id, message))).toEqual([0, 1, 2, 3, 4]);
+});
+
+import {
+  quadraticFacts,
+  verifiedQuotes,
+  normalizeMathDelimiters,
+  estimatedReadingMinutes,
+} from "@/lib/core/tutoring";
+import { examSprint, examSprintTasks, errorNotebook } from "@/lib/core/study-path";
+import { timerDurationError } from "@/lib/core/pomodoro";
+import { formatCount } from "@/lib/core/dates";
+
+describe("melhorias do relatório de experiência", () => {
+  it("verifica os três casos de raízes sem generalizar a parábola", () => {
+    const examples = [
+      ["Por que x² − 5x + 6 = 0 tem duas raízes?", 1, [2, 3]],
+      ["E se x² + 1 = 0?", -4, []],
+      ["Resolva x^2 - 6x + 9 = 0", 0, [3]],
+    ] as const;
+    for (const [question, discriminant, roots] of examples) {
+      const [fact] = quadraticFacts(question);
+      expect(fact?.discriminant).toBe(discriminant);
+      expect(fact?.roots).toEqual(roots);
+      for (const x of fact!.roots) expect(fact!.a * x * x + fact!.b * x + fact!.c).toBeCloseTo(0);
+    }
+    expect(quadraticFacts("x + 1 = 0")).toEqual([]);
+    expect(quadraticFacts("1.5x²+1=0")).toEqual([]);
+  });
+  it("não declara verificáveis trechos inventados ou atribuídos à fonte errada", () => {
+    const docs = [
+      { content: "O oxigênio liberado vem da água." },
+      { content: "O núcleo contém DNA." },
+    ];
+    expect(
+      verifiedQuotes(
+        "> [1] O oxigênio liberado vem da água.\n> [2] O oxigênio vem do gás carbônico.",
+        docs,
+      ),
+    ).toEqual([docs[0]!.content, ""]);
+    expect(verifiedQuotes("> [2] O oxigênio liberado vem da água.", docs)).toEqual(["", ""]);
+  });
+  it("normaliza fórmulas sem modificar exemplos de código", () => {
+    const text = "Use \\(x^2\\) e \\[x=2\\]. Código: `\\(x\\)`\n```js\n\\[codigo\\]\n```";
+    const output = normalizeMathDelimiters(text);
+    expect(output).toContain("$x^2$");
+    expect(output).toContain("$$\nx=2\n$$");
+    expect(output).toContain("`\\(x\\)`");
+    expect(output).toContain("\\[codigo\\]");
+    expect(estimatedReadingMinutes("a ".repeat(181))).toBe(2);
+    expect(formatCount(1, "dia", "dias")).toBe("1 dia");
+  });
+  it("respeita o orçamento da revisão e vincula as etapas ao material", () => {
+    for (const minutes of [15, 40, 180]) {
+      const steps = examSprint(minutes);
+      expect(steps.reduce((sum, step) => sum + step.minutes, 0)).toBe(minutes);
+      expect(steps.every((step) => step.minutes >= 5)).toBe(true);
+    }
+    expect(() => examSprint(0)).toThrow();
+    const tasks = examSprintTasks(
+      { id: "m", subject_id: "s", name: "Aula", kind: "md", content: "Conteúdo" },
+      40,
+      "2026-11-26",
+    );
+    expect(tasks).toHaveLength(3);
+    expect(
+      tasks.every(
+        (t) => t.subject_id === "s" && t.notes.includes("m") && t.due_date === "2026-11-26",
+      ),
+    ).toBe(true);
+  });
+  it("reconstrói erros e reconhece um acerto posterior sem inventar respostas antigas", () => {
+    const base = { question_id: "mat-4", topic: "Matemática" };
+    const wrong = { ...base, id: "1", correct: false, answered_at: "2026-11-24T12:00:00Z" };
+    const right = { ...base, id: "2", correct: true, answered_at: "2026-11-25T12:00:00Z" };
+    const [item] = errorNotebook([wrong, right], QUESTIONS, [], [], [], []);
+    expect(item?.latestCorrect).toBe(true);
+    expect(item?.mistakes).toBe(1);
+    expect(item?.lastAnswer).toBeNull();
+    expect(item?.question.answer).toBe("−5");
+    expect(errorNotebook([right], QUESTIONS, [], [], [], [])).toEqual([]);
+    expect(timerDurationError(1)).not.toBeNull();
+    expect(timerDurationError(5)).toBeNull();
+    expect(
+      feedbackSchema.safeParse({
+        name: "Ana Silva",
+        email: "ana@example.com",
+        category: "Sugestão",
+        message: "Melhorar o aplicativo",
+      }).success,
+    ).toBe(true);
+  });
+});
+
+import { planningScenario } from "@/lib/core/planner";
+it("simula capacidade por data sem alterar semanas seguintes ou disponibilidade original", () => {
+  const task = {
+    id: "scenario-task",
+    title: "Estudo",
+    notes: "",
+    subject_id: null,
+    due_date: "2026-12-02",
+    duration_min: 120,
+    priority: 2 as const,
+    done: false,
+    completed_at: null,
+  };
+  const availability = [60, 60, 60, 60, 60, 60, 60];
+  const scenario = planningScenario("2026-11-25", 2, 20);
+  const plan = buildAdaptivePlan([task], availability, "2026-11-25", [], [], [], 8, 15, scenario);
+  expect(plan.blocks.every((b) => b.date >= "2026-11-27")).toBe(true);
+  expect(availability).toEqual([60, 60, 60, 60, 60, 60, 60]);
+  expect(scenario["2026-12-02"]).toBeUndefined();
+  expect(planningScenario("2026-11-25", 0, 20)["2026-11-25"]).toBe(20);
+});
+
+import { citationDetails, citationTitle } from "@/lib/core/assistant";
+it("preserva a ordem bibliográfica independentemente dos IDs novos de uma restauração", () => {
+  const message = "11111111-1111-4111-8111-111111111111";
+  const label = citationTitle("Aula de biologia", 1);
+  expect(citationDetails(label, "22222222-2222-4222-8222-222222222222", message)).toEqual({
+    name: "Aula de biologia",
+    position: 1,
+  });
+  expect(citationDetails("Fonte antiga", messageSourceId(message, 2), message).position).toBe(2);
 });

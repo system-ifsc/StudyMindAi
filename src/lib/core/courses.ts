@@ -26,6 +26,27 @@ export const COURSES = [
     name: "Mecatrônica",
     subjects: ["Eletricidade e Circuitos", "Eletrônica", "Mecânica", "Automação e Controle"],
   },
+  {
+    name: "Ensino médio",
+    subjects: [
+      "Matemática",
+      "Português",
+      "Biologia Celular",
+      "Genética",
+      "Eletricidade e Circuitos",
+    ],
+  },
+  {
+    name: "ENEM e vestibulares",
+    subjects: [
+      "Matemática",
+      "Português",
+      "Biologia Celular",
+      "Genética",
+      "Eletricidade e Circuitos",
+    ],
+  },
+  { name: "Outro curso", subjects: ["Matemática", "Português"] },
 ] as const;
 
 export function findCourse(value: string) {
@@ -35,7 +56,7 @@ export function findCourse(value: string) {
 
 export function requireCourse(value: string): string {
   const course = findCourse(value);
-  if (!course) throw new Error("Selecione um dos quatro cursos disponíveis.");
+  if (!course) throw new Error("Selecione uma opção de estudo disponível.");
   return course.name;
 }
 

@@ -35,7 +35,9 @@ export const Route = createFileRoute("/privacidade")({
         </p>
         <p>
           O assistente envia ao serviço de IA a pergunta e até 12 mensagens recentes da conversa. Se
-          você escolher, inclui o texto do material e informações de progresso. As chaves ficam no
+          você escolher, inclui o texto dos materiais selecionados e, somente com sua autorização no
+          contexto do tutor, informações de progresso. As citações literais são conferidas contra
+          esses materiais; isso não garante a correção de toda a resposta. As chaves ficam no
           servidor. O monitoramento registra falhas e latência sem registrar suas perguntas,
           respostas, e-mail ou credenciais.
         </p>

@@ -41,14 +41,14 @@ it("mantém a mensagem após falha e limpa somente quando o servidor confirma", 
   const button = screen.getByRole("button", { name: "Enviar feedback" });
   await waitFor(() => expect(button).not.toBeDisabled());
   fireEvent.change(screen.getByLabelText("Seu nome"), { target: { value: "Ana Silva" } });
-  fireEvent.change(screen.getByLabelText("Seu Gmail"), { target: { value: "ana@gmail.com" } });
+  fireEvent.change(screen.getByLabelText("Seu e-mail"), { target: { value: "ana@gmail.com" } });
   const input = screen.getByLabelText("Sua mensagem");
   fireEvent.change(input, { target: { value: "Melhorar o calendário de estudos" } });
   fireEvent.click(button);
   expect(await screen.findByRole("alert")).toHaveTextContent("Falha ao enviar");
   expect(input).toHaveValue("Melhorar o calendário de estudos");
   expect(screen.getByLabelText("Seu nome")).toHaveValue("Ana Silva");
-  expect(screen.getByLabelText("Seu Gmail")).toHaveValue("ana@gmail.com");
+  expect(screen.getByLabelText("Seu e-mail")).toHaveValue("ana@gmail.com");
   fireEvent.click(button);
   await screen.findByText(/Feedback recebido!/);
   expect(input).toHaveValue("");
@@ -67,7 +67,7 @@ it("mantém a mensagem após falha e limpa somente quando o servidor confirma", 
   );
 });
 
-it("valida o Gmail antes de chamar a API de envio", async () => {
+it("valida o e-mail antes de chamar a API de envio", async () => {
   const fetcher = vi.fn(async () => Response.json({ configured: true }));
   vi.stubGlobal("fetch", fetcher);
   render(<Feedback />);
@@ -75,12 +75,12 @@ it("valida o Gmail antes de chamar a API de envio", async () => {
     expect(screen.getByRole("button", { name: "Enviar feedback" })).not.toBeDisabled(),
   );
   fireEvent.change(screen.getByLabelText("Seu nome"), { target: { value: "Ana Silva" } });
-  fireEvent.change(screen.getByLabelText("Seu Gmail"), { target: { value: "ana@example.com" } });
+  fireEvent.change(screen.getByLabelText("Seu e-mail"), { target: { value: "email-invalido" } });
   fireEvent.change(screen.getByLabelText("Sua mensagem"), {
     target: { value: "Melhorar calendário" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Enviar feedback" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent("@gmail.com");
+  fireEvent.submit(screen.getByRole("button", { name: "Enviar feedback" }).closest("form")!);
+  expect(await screen.findByRole("alert")).toHaveTextContent("e-mail válido");
   expect(fetcher).toHaveBeenCalledTimes(1);
 });
 
@@ -102,7 +102,7 @@ it("não confirma o feedback quando o registro não foi enviado por e-mail", asy
   const button = screen.getByRole("button", { name: "Enviar feedback" });
   await waitFor(() => expect(button).not.toBeDisabled());
   fireEvent.change(screen.getByLabelText("Seu nome"), { target: { value: "Ana Silva" } });
-  fireEvent.change(screen.getByLabelText("Seu Gmail"), { target: { value: "ana@gmail.com" } });
+  fireEvent.change(screen.getByLabelText("Seu e-mail"), { target: { value: "ana@gmail.com" } });
   fireEvent.change(screen.getByLabelText("Sua mensagem"), {
     target: { value: "Melhorar o calendário" },
   });

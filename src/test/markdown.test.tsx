@@ -29,3 +29,33 @@ it("copia o texto original e confirma o resultado", async () => {
   );
   expect(writeText).toHaveBeenCalledWith("SELECT 1;");
 });
+
+it("não confirma a cópia de um conteúdo novo nem de uma cópia antiga ainda pendente", async () => {
+  let complete: (() => void) | undefined;
+  const writeText = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        complete = resolve;
+      }),
+  );
+  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+  const { rerender } = render(<CopyText text="Resposta antiga" />);
+  fireEvent.click(screen.getByRole("button", { name: "Copiar resposta" }));
+  rerender(<CopyText text="Resposta nova" />);
+  complete?.();
+  await waitFor(() => expect(writeText).toHaveBeenCalledWith("Resposta antiga"));
+  expect(screen.getByRole("button", { name: "Copiar resposta" })).toBeInTheDocument();
+});
+
+it("renderiza fórmulas com MathML acessível sem permitir comandos LaTeX inseguros", () => {
+  const { container } = render(
+    <MarkdownContent
+      content={
+        "Fórmula: \\(x^2 - 5x + 6 = 0\\).\n\n$$\\frac{-b+\\sqrt{b^2-4ac}}{2a}$$\n\n$\\href{javascript:alert(1)}{ataque}$\n\n$\\includegraphics{https://example.test/tracker.png}$"
+      }
+    />,
+  );
+  expect(container.querySelector("math")).not.toBeNull();
+  expect(container.querySelector("annotation")?.textContent).toContain("x^2");
+  expect(container.querySelector("img, script, iframe, a[href^='javascript:']")).toBeNull();
+});

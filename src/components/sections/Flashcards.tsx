@@ -1,3 +1,5 @@
+import { MarkdownContent } from "@/components/app/MarkdownContent";
+import { MatchingGame } from "./MatchingGame";
 import { StudyTools } from "./StudyTools";
 import { useState, type FormEvent } from "react";
 import { Pencil, Plus, RotateCcw } from "lucide-react";
@@ -21,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { formatBR, today } from "@/lib/core/dates";
+import { formatBR, today, formatCount } from "@/lib/core/dates";
 import { review, type Grade } from "@/lib/core/srs";
 import { dueCards } from "@/lib/core/metrics";
 import type { Flashcard } from "@/lib/core/types";
@@ -132,7 +134,7 @@ export function Flashcards() {
                   <span className="mb-2 block text-xs uppercase tracking-wider text-muted-foreground">
                     {flipped ? "Resposta" : "Pergunta"}
                   </span>
-                  {flipped ? card.back : card.front}
+                  <MarkdownContent content={flipped ? card.back : card.front} inline />
                 </button>
                 {!flipped ? (
                   <Button variant="outline" onClick={() => setFlipped(true)}>
@@ -145,23 +147,59 @@ export function Flashcards() {
                     role="group"
                     aria-label="Como foi lembrar?"
                   >
-                    <Button variant="destructive" onClick={() => grade(0)} disabled={upd.isPending}>
+                    <Button
+                      variant="destructive"
+                      aria-label="Errei"
+                      title={`Próxima revisão: ${formatBR(review(card, 0, t).due_date)}`}
+                      onClick={() => grade(0)}
+                      disabled={upd.isPending}
+                    >
                       Errei
+                      <span className="ml-1 text-xs opacity-70" aria-hidden>
+                        · {formatCount(review(card, 0, t).interval_days, "dia", "dias")}
+                      </span>
                     </Button>
-                    <Button variant="outline" onClick={() => grade(1)} disabled={upd.isPending}>
+                    <Button
+                      variant="outline"
+                      aria-label="Difícil"
+                      title={`Próxima revisão: ${formatBR(review(card, 1, t).due_date)}`}
+                      onClick={() => grade(1)}
+                      disabled={upd.isPending}
+                    >
                       Difícil
+                      <span className="ml-1 text-xs opacity-70" aria-hidden>
+                        · {formatCount(review(card, 1, t).interval_days, "dia", "dias")}
+                      </span>
                     </Button>
-                    <Button variant="secondary" onClick={() => grade(2)} disabled={upd.isPending}>
+                    <Button
+                      variant="secondary"
+                      aria-label="Bom"
+                      title={`Próxima revisão: ${formatBR(review(card, 2, t).due_date)}`}
+                      onClick={() => grade(2)}
+                      disabled={upd.isPending}
+                    >
                       Bom
+                      <span className="ml-1 text-xs opacity-70" aria-hidden>
+                        · {formatCount(review(card, 2, t).interval_days, "dia", "dias")}
+                      </span>
                     </Button>
-                    <Button onClick={() => grade(3)} disabled={upd.isPending}>
+                    <Button
+                      aria-label="Fácil"
+                      title={`Próxima revisão: ${formatBR(review(card, 3, t).due_date)}`}
+                      onClick={() => grade(3)}
+                      disabled={upd.isPending}
+                    >
                       Fácil
+                      <span className="ml-1 text-xs opacity-70" aria-hidden>
+                        · {formatCount(review(card, 3, t).interval_days, "dia", "dias")}
+                      </span>
                     </Button>
                   </div>
                 )}
               </div>
             )}
           </Panel>
+          <MatchingGame key={filterSubject} cards={visible} />
           <Panel title={`Cartões visíveis (${visible.length})`}>
             {visible.length === 0 ? (
               <Empty

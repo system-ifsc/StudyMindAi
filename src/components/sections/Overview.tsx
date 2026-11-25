@@ -16,7 +16,7 @@ import {
 import { useProfile, useTable } from "@/hooks/use-data";
 import { Panel, Stat, Loading, ErrorState, Empty, Dot } from "@/components/app/ui";
 import { Button } from "@/components/ui/button";
-import { addDays, formatBR, formatMinutes, today } from "@/lib/core/dates";
+import { addDays, formatBR, formatMinutes, formatCount, today } from "@/lib/core/dates";
 import { completion, dueCards, minutesInRange, overdueTasks, streak } from "@/lib/core/metrics";
 import { buildAdaptivePlan } from "@/lib/core/adaptive-plan";
 import { learningRecommendations } from "@/lib/core/learning";
@@ -59,6 +59,8 @@ export function Overview({ go }: SectionProps) {
     ss,
     14,
   ).blocks.filter((b) => b.date === t);
+  const suggestions = learningRecommendations(ts, cards.data ?? [], answers.data ?? [], ss, t);
+  const nextStudy = suggestions[0]!;
   const subj = (id: string | null) => subjects.data?.find((s) => s.id === id);
   const upcoming = ts
     .filter((x) => !x.done)
@@ -89,15 +91,11 @@ export function Overview({ go }: SectionProps) {
               <span className="size-1.5 rounded-full bg-current" /> SEU MOMENTO DE FOCO
             </span>
             <h2 id="focus-heading" className="mt-4 text-2xl font-bold leading-tight sm:text-3xl">
-              Pequenos passos.
-              <br />
-              Grandes conquistas.
+              {nextStudy.title}
             </h2>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed opacity-75">
-              Reserve um momento para aprender algo novo hoje.
-            </p>
-            <Button onClick={() => go("foco")} className="hero-start mt-5">
-              <Play className="size-4" aria-hidden /> Começar a estudar{" "}
+            <p className="mt-3 max-w-xs text-sm leading-relaxed opacity-75">{nextStudy.reason}</p>
+            <Button onClick={() => go(nextStudy.section)} className="hero-start mt-5">
+              <Play className="size-4" aria-hidden /> Começar próximo estudo{" "}
               <ArrowRight className="size-4" aria-hidden />
             </Button>
           </div>
@@ -166,9 +164,9 @@ export function Overview({ go }: SectionProps) {
       </div>
       <div className="grid grid-cols-3 gap-3" aria-label="Atalhos de estudo">
         {[
-          { key: "disciplinas", label: "Disciplinas", icon: BookOpen, color: "mint" },
-          { key: "planejador", label: "Meu plano", icon: CalendarDays, color: "lilac" },
-          { key: "flashcards", label: "Flashcards", icon: Layers, color: "peach" },
+          { key: "assistente", label: "Quero entender uma dúvida", icon: BookOpen, color: "mint" },
+          { key: "planejador", label: "Tenho uma prova", icon: CalendarDays, color: "lilac" },
+          { key: "flashcards", label: "Quero revisar", icon: Layers, color: "peach" },
         ].map((item) => (
           <button
             key={item.key}
@@ -181,10 +179,10 @@ export function Overview({ go }: SectionProps) {
             <span className="shortcut-copy">
               {item.label}
               <small>
-                {item.key === "disciplinas"
-                  ? "Organize seu conhecimento"
+                {item.key === "assistente"
+                  ? "Tutor com contexto e fontes"
                   : item.key === "planejador"
-                    ? "Encontre seu próximo passo"
+                    ? "Monte uma revisão curta"
                     : "Fixe o que você aprendeu"}
               </small>
             </span>
@@ -198,7 +196,7 @@ export function Overview({ go }: SectionProps) {
           revisões.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
-          {learningRecommendations(ts, cards.data ?? [], answers.data ?? [], ss, t).map((item) => (
+          {suggestions.map((item) => (
             <button
               key={item.title}
               onClick={() => go(item.section)}
@@ -220,7 +218,11 @@ export function Overview({ go }: SectionProps) {
         <Stat
           icon={Flame}
           label="Sequência"
-          value={<span className="inline-flex items-center gap-2">{streak(ss, t)} dias</span>}
+          value={
+            <span className="inline-flex items-center gap-2">
+              {formatCount(streak(ss, t), "dia", "dias")}
+            </span>
+          }
         />
         <Stat
           icon={CheckCircle2}

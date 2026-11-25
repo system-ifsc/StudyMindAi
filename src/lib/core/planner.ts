@@ -28,6 +28,7 @@ export function buildPlan(
   minBlock = 15,
   rescheduleOverdue = false,
   rank?: ReadonlyMap<string, number>,
+  dailyCapacity: Readonly<Record<string, number>> = {},
 ): PlanResult {
   const pending = tasks
     .filter((t) => !t.done)
@@ -42,7 +43,7 @@ export function buildPlan(
   const capacity = new Map<string, number>();
   for (let i = 0; i < horizonDays; i++) {
     const d = addDays(start, i);
-    capacity.set(d, Math.max(0, availability[weekdayIndex(d)] ?? 0));
+    capacity.set(d, Math.max(0, dailyCapacity[d] ?? availability[weekdayIndex(d)] ?? 0));
   }
   const blocks: PlanBlock[] = [];
   const unscheduled: PlanResult["unscheduled"] = [];
@@ -69,4 +70,23 @@ export function buildPlan(
   }
   blocks.sort((a, b) => a.date.localeCompare(b.date));
   return { blocks, unscheduled };
+}
+
+/** Cenário local por data: não muda a disponibilidade semanal nem os registros. */
+export function planningScenario(
+  start: string,
+  unavailableDays: number,
+  minutesToday: number | null,
+) {
+  if (!Number.isInteger(unavailableDays) || unavailableDays < 0 || unavailableDays > 7)
+    throw new Error("Informe de 0 a 7 dias indisponíveis.");
+  if (
+    minutesToday !== null &&
+    (!Number.isInteger(minutesToday) || minutesToday < 0 || minutesToday > 960)
+  )
+    throw new Error("Informe de 0 a 960 minutos hoje.");
+  const days: Record<string, number> = {};
+  if (minutesToday !== null) days[start] = minutesToday;
+  for (let i = 0; i < unavailableDays; i++) days[addDays(start, i)] = 0;
+  return days;
 }

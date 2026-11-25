@@ -9,11 +9,7 @@ export const feedbackSchema = z.object({
     .min(2, "Informe seu nome.")
     .max(120)
     .refine((value) => !/[\r\n]/.test(value), "Nome inválido."),
-  email: z
-    .email("Informe um Gmail válido.")
-    .trim()
-    .toLowerCase()
-    .refine((value) => value.endsWith("@gmail.com"), "Informe um endereço @gmail.com."),
+  email: z.email("Informe um e-mail válido.").trim().toLowerCase(),
   category: z.enum(feedbackCategories),
   message: z.string().trim().min(10, "Escreva pelo menos 10 caracteres.").max(5000),
 });

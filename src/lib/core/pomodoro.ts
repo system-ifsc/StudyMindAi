@@ -80,3 +80,9 @@ export function elapsedMs(s: TimerState, now: number): number {
 export function sessionMinutes(s: TimerState, now: number): number {
   return Math.min(480, Math.floor(elapsedMs(s, now) / 60000));
 }
+
+export function timerDurationError(minutes: number): string | null {
+  return Number.isInteger(minutes) && minutes >= 5 && minutes <= 120
+    ? null
+    : "Escolha uma duração entre 5 e 120 minutos inteiros.";
+}

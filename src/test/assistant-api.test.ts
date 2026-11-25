@@ -177,4 +177,49 @@ describe("API autenticada de estudos", () => {
     ).toBe(502);
     expect(mocks.stream).not.toHaveBeenCalled();
   });
+  it("resolve múltiplas fontes pelo Repo e retorna a lista deduplicada", async () => {
+    const second = "22222222-2222-4222-8222-222222222222";
+    mocks.get.mockImplementation(async (_table, key) => ({
+      id: key,
+      name: key === id ? "Biologia" : "Química",
+      content: "Conteúdo",
+    }));
+    mocks.stream.mockReturnValue({ text: Promise.resolve("Compare [1] e [2].") });
+    const response = await handleAssistant(
+      request({
+        messages: [{ role: "user", content: "Compare os documentos" }],
+        material_id: id,
+        material_ids: [id, second, second],
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).sources).toEqual([
+      { id, name: "Biologia" },
+      { id: second, name: "Química" },
+    ]);
+    expect(mocks.get).toHaveBeenCalledTimes(2);
+    expect(mocks.list).not.toHaveBeenCalled();
+  });
+  it("recusa documento adicional inacessível e limite conjunto antes do provedor", async () => {
+    mocks.get.mockResolvedValueOnce(null);
+    const body = { messages: [{ role: "user", content: "Compare" }], material_ids: [id] };
+    expect((await handleAssistant(request(body))).status).toBe(404);
+    mocks.get.mockResolvedValue({ id, name: "Grande", content: "a".repeat(60001) });
+    expect((await handleAssistant(request(body))).status).toBe(400);
+    expect(mocks.stream).not.toHaveBeenCalled();
+    expect(mocks.reserve).not.toHaveBeenCalled();
+  });
+  it("devolve somente citações literais existentes e inclui a checagem quadrática", async () => {
+    mocks.stream.mockReturnValue({
+      text: Promise.resolve("Explicação.\n> [1] O núcleo contém DNA."),
+    });
+    const response = await handleAssistant(
+      request({
+        material_id: id,
+        messages: [{ role: "user", content: "Por que x² - 5x + 6 = 0 tem duas raízes?" }],
+      }),
+    );
+    expect((await response.json()).sources[0].excerpt).toBe("O núcleo contém DNA.");
+    expect(mocks.stream.mock.calls[0]![0].messages[0].content).toContain('"discriminant":1');
+  });
 });

@@ -35,3 +35,7 @@ export function formatMinutes(min: number): string {
     m = min % 60;
   return m ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`;
 }
+
+export function formatCount(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}

@@ -65,7 +65,7 @@ it("sends only to the fixed recipient with the submitted contact address", async
   );
   const text = Buffer.from(mime.split("\r\n\r\n")[1]!, "base64").toString("utf8");
   expect(text).toContain("Nome: Ana Silva");
-  expect(text).toContain("Gmail para contato: ana@gmail.com");
+  expect(text).toContain("E-mail para contato: ana@gmail.com");
   expect(mime).toContain("From: StudyMind <system.ifsc@gmail.com>");
   expect(options.headers).toMatchObject({ Authorization: "Bearer access-token" });
 });
@@ -100,10 +100,10 @@ it("rejects missing confirmation from Gmail", async () => {
   ).toMatchObject({ saved: true, sent: false });
 });
 
-it("rejects missing name, non-Gmail contacts and header injection", async () => {
+it("rejects missing name, invalid contacts and header injection", async () => {
   for (const contact of [
     { name: "" },
-    { email: "person@example.com" },
+    { email: "email-invalido" },
     { email: "ana@gmail.com\r\nBcc: other@gmail.com" },
   ]) {
     expect(

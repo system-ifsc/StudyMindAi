@@ -1,12 +1,15 @@
+import { materialReviewTasks } from "@/lib/core/engagement";
+import { today } from "@/lib/core/dates";
 import { useMemo, useRef, useState } from "react";
 import { FileText, Upload, Pencil, Save } from "lucide-react";
 import { toast } from "sonner";
-import { useInsert, useRemove, useTable, useUpdate, useRepo } from "@/hooks/use-data";
+import { useInsert, useRemove, useTable, useUpdate, useRepo, useSave } from "@/hooks/use-data";
 import {
   ConfirmDelete,
   Empty,
   ErrorState,
   Loading,
+  NativeSelect,
   PageHeader,
   Panel,
   Spin,
@@ -14,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { StudyText } from "./StudyText";
 import { StudyTools } from "./StudyTools";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -23,6 +27,18 @@ import { printMaterial } from "@/lib/print-material";
 
 export function Materials() {
   const repo = useRepo();
+  const schedule = useSave<Material>(
+    async (r, m) => {
+      const existing = await r.list("tasks");
+      for (const task of materialReviewTasks(m, today(), existing)) await r.insert("tasks", task);
+    },
+    {
+      invalidate: ["tasks"],
+      success: "Revisões de 1, 7 e 30 dias adicionadas ao calendário e planejamento",
+    },
+  );
+  const subjects = useTable("subjects");
+  const [subjectFilter, setSubjectFilter] = useState("");
   const originals = useTable("material_files");
   const mats = useTable("materials");
   const ins = useInsert("materials", "Material salvo"),
@@ -39,10 +55,12 @@ export function Materials() {
   const input = useRef<HTMLInputElement>(null);
   const filtered = useMemo(
     () =>
-      (mats.data ?? []).filter((m) =>
-        `${m.name} ${m.content}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
+      (mats.data ?? []).filter(
+        (m) =>
+          (!subjectFilter || m.subject_id === subjectFilter) &&
+          `${m.name} ${m.content}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
       ),
-    [mats.data, query],
+    [mats.data, query, subjectFilter],
   );
 
   async function onFile(file: File) {
@@ -64,6 +82,9 @@ export function Materials() {
       } else if (v.kind === "docx" || v.kind === "pptx") {
         const { extractOfficeText } = await import("@/lib/document-extract");
         text = await extractOfficeText(file, v.kind);
+      } else if (v.kind === "image") {
+        const { extractImageText } = await import("@/lib/image-extract");
+        text = await extractImageText(file, setReadProgress);
       } else text = await file.text();
       const err = validateContent(text);
       if (err) throw new Error(err);
@@ -71,7 +92,7 @@ export function Materials() {
       await ins.mutateAsync({
         id,
         name: file.name.slice(0, 150),
-        kind: v.kind === "docx" || v.kind === "pptx" ? "md" : v.kind,
+        kind: v.kind === "txt" || v.kind === "pdf" ? v.kind : "md",
         content: text,
       });
       try {
@@ -95,7 +116,7 @@ export function Materials() {
     <div className="space-y-6">
       <PageHeader
         title="Materiais"
-        description={`Envie TXT/MD (até 1 MB), PDF com texto, DOCX ou PPTX (até 10 MB). O texto e o arquivo original são privados na sua conta. Limite de ${MAX_CHARS.toLocaleString("pt-BR")} caracteres por material.`}
+        description={`Envie TXT/MD (até 1 MB), PDF com texto, DOCX, PPTX ou imagens PNG/JPG/WebP com OCR (até 10 MB). O texto e o arquivo original são privados na sua conta. Limite de ${MAX_CHARS.toLocaleString("pt-BR")} caracteres por material.`}
         actions={
           <>
             <Button variant="outline" onClick={() => setNewNote(true)}>
@@ -104,7 +125,7 @@ export function Materials() {
             <input
               ref={input}
               type="file"
-              accept=".txt,.md,.markdown,.pdf,.docx,.pptx,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+              accept=".txt,.md,.markdown,.pdf,.docx,.pptx,.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation"
               className="sr-only"
               id="mat-file"
               onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
@@ -148,11 +169,23 @@ export function Materials() {
                 toast.error(err || "Informe um título.");
                 return;
               }
-              ins.mutate({ name, content, kind: "md" }, { onSuccess: () => setNewNote(false) });
+              ins.mutate(
+                { name, content, kind: "md", subject_id: String(f.get("subject")) || null },
+                { onSuccess: () => setNewNote(false) },
+              );
             }}
           >
             <Label htmlFor="note-name">Título</Label>
             <Input id="note-name" name="name" maxLength={150} required />
+            <Label htmlFor="note-subject">Disciplina</Label>
+            <NativeSelect id="note-subject" name="subject">
+              <option value="">Sem disciplina</option>
+              {subjects.data?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </NativeSelect>
             <Label htmlFor="note-content">Anotação</Label>
             <Textarea
               id="note-content"
@@ -185,6 +218,18 @@ export function Materials() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
+            <NativeSelect
+              aria-label="Filtrar materiais por disciplina"
+              value={subjectFilter}
+              onChange={(e) => setSubjectFilter(e.target.value)}
+            >
+              <option value="">Todas as disciplinas</option>
+              {subjects.data?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </NativeSelect>
             <ul className="space-y-2" aria-label="Lista de materiais">
               {filtered.map((m) => (
                 <li key={m.id} className="flex items-center gap-1">
@@ -262,7 +307,9 @@ export function Materials() {
             }
           >
             {!sel ? (
-              <p className="text-sm text-muted-foreground">Escolha um item à esquerda para ler.</p>
+              <p className="text-sm text-muted-foreground">
+                Escolha um material na lista para ler.
+              </p>
             ) : editing ? (
               <>
                 <Textarea
@@ -277,7 +324,7 @@ export function Materials() {
               </>
             ) : (
               <div className="max-h-[32rem] overflow-auto whitespace-pre-wrap text-sm leading-relaxed">
-                {sel.content}
+                <StudyText key={sel.id} content={sel.content} />
               </div>
             )}
           </Panel>
@@ -285,6 +332,26 @@ export function Materials() {
       )}
       {sel && !editing && (
         <>
+          <Label htmlFor="material-subject">Disciplina do material</Label>
+          <NativeSelect
+            id="material-subject"
+            value={sel.subject_id ?? ""}
+            disabled={upd.isPending}
+            onChange={(e) => {
+              const subject_id = e.target.value || null;
+              upd.mutate(
+                { id: sel.id, patch: { subject_id } },
+                { onSuccess: () => setSel({ ...sel, subject_id }) },
+              );
+            }}
+          >
+            <option value="">Sem disciplina</option>
+            {subjects.data?.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </NativeSelect>
           {originals.data
             ?.filter((f) => f.material_id === sel.id)
             .map((f) => (
@@ -319,6 +386,13 @@ export function Materials() {
             }}
           >
             Imprimir / salvar como PDF
+          </Button>
+          <Button
+            variant="outline"
+            disabled={schedule.isPending}
+            onClick={() => schedule.mutate(sel)}
+          >
+            Agendar revisões em 1, 7 e 30 dias
           </Button>
           <StudyTools key={`${sel.id}-${sel.updated_at ?? sel.content}`} material={sel} />
         </>

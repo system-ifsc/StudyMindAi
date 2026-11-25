@@ -20,7 +20,13 @@ it("retoma conversa e feedback por Repo depois de desmontar a tela", async () =>
     vi.fn(async (_url: string, options?: RequestInit) =>
       Response.json(
         options?.method === "POST"
-          ? { text: "Uma explicação real de teste.", sources: [] }
+          ? {
+              text: "Uma explicação real de teste.",
+              sources: [
+                { name: "Fonte A", id: null },
+                { name: "Fonte B", id: null },
+              ],
+            }
           : { configured: true },
       ),
     ),
@@ -57,6 +63,10 @@ it("retoma conversa e feedback por Repo depois de desmontar a tela", async () =>
   await screen.findByText("Uma explicação real de teste.");
   expect(screen.getByRole("button", { name: "Útil" })).toHaveAttribute("aria-pressed", "true");
   expect(await repo.list("study_messages")).toHaveLength(2);
+  const savedSources = await repo.list("study_message_sources");
+  expect(savedSources).toHaveLength(2);
+  expect(new Set(savedSources.map((s) => s.id)).size).toBe(2);
+  expect(screen.getByText(/\[1\] Fonte A, \[2\] Fonte B/)).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText("Como estudar"), { target: { value: "review" } });
   await waitFor(async () =>
     expect((await repo.list("study_conversations"))[0]!.mode).toBe("review"),

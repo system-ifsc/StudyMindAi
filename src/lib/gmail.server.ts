@@ -62,7 +62,7 @@ export async function sendFeedbackEmail(
   user: { id: string; email?: string },
 ) {
   const { name, email, category, message } = feedback;
-  const text = `Nome: ${name}\nGmail para contato: ${email}\nTipo: ${category}\nConta autenticada: ${user.id}\n\n${message}`;
+  const text = `Nome: ${name}\nE-mail para contato: ${email}\nTipo: ${category}\nConta autenticada: ${user.id}\n\n${message}`;
   const smtp = gmailSmtpConfig();
   if (smtp) {
     const transport = smtpTransport(smtp);

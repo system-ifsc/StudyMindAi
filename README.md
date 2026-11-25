@@ -55,13 +55,22 @@ A aplicação tem interface responsiva, modos claro e escuro e preferências de 
 Importe um material, consulte seu conteúdo e, com IA configurada, transforme-o em resumo, guia, flashcards, questionário ou simulado. As ferramentas incluem questões de múltipla escolha, verdadeiro ou falso e discursivas; a correção discursiva usa o provedor de IA.
 
 - **TXT e Markdown:** até 1 MB por arquivo.
-- **PDF, DOCX e PPTX:** até 10 MB por arquivo.
+- **PDF, DOCX, PPTX e imagens PNG/JPG/WebP:** até 10 MB por arquivo. Imagens usam OCR local para extrair texto; não há interpretação geral de gráficos ou transcrição de áudio/vídeo.
 - **Texto extraído:** até 200 mil caracteres por material.
 - **PDF digitalizado:** OCR local em português e inglês, para até 20 páginas sem texto. O primeiro uso depende do download dos idiomas; a qualidade do reconhecimento varia com o documento.
 
-### Quatro áreas de formação
+### Revisão conectada
 
-O catálogo oferece **Informática para Internet**, **Agroecologia**, **Biotecnologia** e **Mecatrônica**, com sugestões de disciplinas e exercícios fixos relacionados a essas áreas. O curso é escolhido no onboarding e pode ser alterado nas configurações.
+- **Prova amanhã:** no Planejador, escolha um material e de 15 a 180 minutos. O roteiro determinístico distribui o tempo entre diagnóstico, revisão essencial e prática. As etapas podem ser adicionadas ao calendário; a geração de conteúdo depende da IA configurada.
+- **Caderno de erros:** em Exercícios, retome questões erradas e transforme explicações em flashcards. Uma nova tentativa é registrada sem apagar o erro original. Respostas antigas do banco fixo não armazenavam a alternativa escolhida; o app informa quando esse detalhe não está disponível.
+- **Semana alterada:** simule dias indisponíveis ou menos minutos hoje, sem mudar o perfil ou as atividades salvas.
+- **Cartões por IA:** confira e edite perguntas e respostas antes de incluí-las no SRS. Os intervalos futuros também aparecem nas opções de avaliação da revisão.
+- **Tutor e fontes:** modo, nível e materiais ficam visíveis. Citações literais são conferidas contra o documento e podem ser abertas no contexto. Essa conferência não certifica toda a resposta. Uma checagem aritmética limitada auxilia equações quadráticas com coeficientes inteiros; não é um verificador matemático geral.
+- **Leitura:** fórmulas são renderizadas com MathML acessível e comandos inseguros desativados. Resumos oferecem uma estimativa de tempo de leitura. A leitura por voz depende do navegador; roteiros de podcast não são arquivos de áudio.
+
+### Contextos de estudo
+
+O catálogo preserva **Informática para Internet**, **Agroecologia**, **Biotecnologia** e **Mecatrônica** e também oferece **Ensino médio**, **ENEM e vestibulares** e **Outro curso**. As disciplinas podem ser personalizadas para combinar contextos acadêmicos na mesma agenda. A opção é escolhida no onboarding e pode ser alterada nas configurações. O banco fixo informa sua cobertura; não representa todas as matérias de cada contexto.
 
 As sugestões ajudam a começar; **não representam uma matriz curricular oficial**.
 
@@ -297,10 +306,11 @@ Para preparar os testes de navegador:
 
 ```bash
 npx playwright install chromium
+VITE_BACKEND=local npm run build
 npm run test:e2e
 ```
 
-Os E2E usam build local, contas de teste e um banco separado. Se seu ambiente estiver em Supabase, gere antes o build com `VITE_BACKEND=local`. Os cenários cobrem Chromium desktop e emulação de celular.
+Os E2E usam build local, contas de teste e um banco separado. Os cenários com cadastro verificam a saúde do backend local antes de criar contas. Ao terminar, execute `npm run build` novamente para gerar o build com a configuração habitual do projeto. Se seu ambiente estiver em Supabase, gere antes o build com `VITE_BACKEND=local`. Os cenários cobrem Chromium desktop e emulação de celular.
 
 O [workflow de qualidade](./.github/workflows/quality.yml) executa lint, tipagem, testes, build e E2E, com relatórios em caso de falha. A suíte inclui regras de negócio, autenticação, isolamento, documentos, backup e integrações. Os testes PostgreSQL usam PGlite com schemas mínimos de Auth/Storage; envio real de e-mail, OAuth e serviços externos precisam de validação no ambiente publicado.
 
